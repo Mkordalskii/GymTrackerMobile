@@ -1,3 +1,4 @@
+//Pomaranczowe karty z Szybkich akcji
 import React from 'react';
 import {Pressable, StyleSheet, Text} from 'react-native';
 

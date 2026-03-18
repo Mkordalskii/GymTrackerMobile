@@ -1,3 +1,4 @@
+//Górny pasek z tytułem i przyciskiem akcji
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
@@ -10,7 +11,7 @@ export function AppHeader({title, actionLabel}: AppHeaderProps) {
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.eyebrow}>GymFlow</Text>
+        <Text style={styles.eyebrow}>Gym Tracker</Text>
         <Text style={styles.title}>{title}</Text>
       </View>
 

@@ -1,3 +1,4 @@
+//Mala etykieta np. z info 55 min 7 cwiczen
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 

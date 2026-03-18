@@ -1,3 +1,4 @@
+//Plik z przykładowymi danymi do testowania i rozwoju aplikacji
 export type TabKey = 'home' | 'plans' | 'exercises' | 'progress' | 'profile';
 export type ExerciseFilter =
   | 'Wszystkie'

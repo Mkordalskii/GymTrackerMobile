@@ -1,3 +1,4 @@
+//tytuly sekcji np. "Szybkie akcje", "Twoje podsumowanie" itp.
 import React from 'react';
 import {StyleSheet, Text} from 'react-native';
 

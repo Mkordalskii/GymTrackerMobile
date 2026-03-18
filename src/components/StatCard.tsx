@@ -1,3 +1,4 @@
+//karta np. Aktywny plan, Ostatni trening, itp. z duzym napisem i mniejszym opisem
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 

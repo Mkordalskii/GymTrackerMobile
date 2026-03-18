@@ -1,3 +1,4 @@
+//konfiguracja dolnych zakladek, ich klucze, etykiety i ikony
 import {TabKey} from './mockData';
 
 export const tabs: Array<{key: TabKey; label: string; icon: string}> = [
