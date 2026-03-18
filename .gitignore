@@ -1,3 +1,40 @@
+# =========================
+# .NET / Visual Studio
+# =========================
+.vs/
+**/.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Env
+# =========================
+.env
+.env.*
+
+# =========================
+# React Native dodatki
+# =========================
+*.log
+.expo/
+dist/
+web-build/
+.cache/
+
+# =========================
+# OS
+# =========================
+Thumbs.db
+Desktop.ini
+
+# =========================
+# Docker (optional)
+# =========================
+docker-compose.override.yml
 # OSX
 #
 .DS_Store
