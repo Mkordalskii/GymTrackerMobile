@@ -12,6 +12,7 @@ function App(): React.JSX.Element {
   const [selectedFilter, setSelectedFilter] =
     useState<ExerciseFilter>('Wszystkie');
 
+    //Jeżeli searchText lub selectedFilter się zmienią, to przefiltruj exercises i zwróć tylko te, które pasują do obu kryteriów
   const filteredExercises = useMemo(() => {
     return exercises.filter(item => {
       const matchesFilter =
