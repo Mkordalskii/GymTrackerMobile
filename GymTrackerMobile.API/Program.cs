@@ -1,6 +1,7 @@
 using System.Reflection;
 using GymTrackerMobile.API.Data;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
 
 namespace GymTrackerMobile.API
 {

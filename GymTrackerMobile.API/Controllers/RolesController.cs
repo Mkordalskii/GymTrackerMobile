@@ -1,5 +1,8 @@
 ﻿using GymTrackerMobile.API.Data;
 using GymTrackerMobile.API.Entities;
+using GymTrackerMobile.API.Features.Roles.Commands;
+using GymTrackerMobile.API.Features.Roles.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,27 +12,60 @@ namespace GymTrackerMobile.API.Controllers
     [Route("api/[controller]")]
     public class RolesController : ControllerBase
     {
-        private readonly GymTrackerDbContext _context;
+        private readonly IMediator _mediator;
 
-        public RolesController(GymTrackerDbContext context)
+        public RolesController(IMediator mediator)
         {
-            _context = context;
+            _mediator = mediator;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Role>>> GetAll()
         {
-            var roles = await _context.Roles.ToListAsync();
+            var roles = await _mediator.Send(new GetAllRolesQuery());
             return Ok(roles);
+        }
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Role>> GetById(int id)
+        {
+            var role = await _mediator.Send(new GetRoleByIdQuery(id));
+            if (role == null)
+            {
+                return NotFound(new { message = $"The specified ID - {id} was not found" });
+            }
+            return Ok(role);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Role>> Create(Role role)
+        public async Task<ActionResult<Role>> Create([FromBody]CreateRoleCommand command)
         {
-            _context.Roles.Add(role);
-            await _context.SaveChangesAsync();
+            var createdRole = await _mediator.Send(command);
+            return CreatedAtAction(nameof(GetById), new { id = createdRole.Id }, createdRole);
+        }
+        
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id,[FromBody] UpdateRoleCommand command)
+        {
+            if (id != command.Id)
+                return BadRequest("The ID in the URL must match the ID in the body.");
 
-            return CreatedAtAction(nameof(GetAll), new { id = role.Id }, role);
+            var updated = await _mediator.Send(command);
+
+            if (!updated)
+                return NotFound();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var deleted = await _mediator.Send(new DeleteRoleCommand(id));
+
+            if (!deleted)
+                return NotFound();
+
+            return NoContent();
         }
     }
 }
