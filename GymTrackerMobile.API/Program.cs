@@ -1,4 +1,4 @@
-
+using System.Reflection;
 using GymTrackerMobile.API.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +17,7 @@ namespace GymTrackerMobile.API
             builder.Services.AddOpenApi();
             builder.Services.AddDbContext<GymTrackerDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
             var app = builder.Build();
 

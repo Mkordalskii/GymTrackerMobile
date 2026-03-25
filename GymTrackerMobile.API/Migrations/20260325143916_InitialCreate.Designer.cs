@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GymTrackerMobile.API.Migrations
 {
     [DbContext(typeof(GymTrackerDbContext))]
-    [Migration("20260318150541_InitialCreate")]
+    [Migration("20260325143916_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
