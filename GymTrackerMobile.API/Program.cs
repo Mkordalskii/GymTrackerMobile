@@ -1,3 +1,7 @@
+using System.Reflection;
+using GymTrackerMobile.API.Data;
+using Microsoft.EntityFrameworkCore;
+using MediatR;
 
 namespace GymTrackerMobile.API
 {
@@ -12,6 +16,9 @@ namespace GymTrackerMobile.API
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+            builder.Services.AddDbContext<GymTrackerDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
 
             var app = builder.Build();
 
@@ -19,6 +26,11 @@ namespace GymTrackerMobile.API
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/openapi/v1.json", "GymTracker API v1");
+                    options.RoutePrefix = "swagger";
+                });
             }
 
             app.UseHttpsRedirection();
