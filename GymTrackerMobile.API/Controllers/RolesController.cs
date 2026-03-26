@@ -1,10 +1,8 @@
-﻿using GymTrackerMobile.API.Data;
-using GymTrackerMobile.API.Entities;
-using GymTrackerMobile.API.Features.Roles.Commands;
+﻿using GymTrackerMobile.API.Features.Roles.Commands;
+using GymTrackerMobile.API.Features.Roles.Dtos;
 using GymTrackerMobile.API.Features.Roles.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace GymTrackerMobile.API.Controllers
 {
@@ -20,13 +18,13 @@ namespace GymTrackerMobile.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Role>>> GetAll()
+        public async Task<ActionResult<IEnumerable<RoleDto>>> GetAll()
         {
             var roles = await _mediator.Send(new GetAllRolesQuery());
             return Ok(roles);
         }
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Role>> GetById(int id)
+        public async Task<ActionResult<RoleDto>> GetById(int id)
         {
             var role = await _mediator.Send(new GetRoleByIdQuery(id));
             if (role == null)
@@ -37,14 +35,14 @@ namespace GymTrackerMobile.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Role>> Create([FromBody]CreateRoleCommand command)
+        public async Task<ActionResult<RoleDto>> Create([FromBody] CreateRoleCommand command)
         {
             var createdRole = await _mediator.Send(command);
             return CreatedAtAction(nameof(GetById), new { id = createdRole.Id }, createdRole);
         }
-        
+
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id,[FromBody] UpdateRoleCommand command)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateRoleCommand command)
         {
             if (id != command.Id)
                 return BadRequest("The ID in the URL must match the ID in the body.");

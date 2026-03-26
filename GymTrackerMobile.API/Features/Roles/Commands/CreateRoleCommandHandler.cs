@@ -1,10 +1,11 @@
 ﻿using GymTrackerMobile.API.Data;
 using GymTrackerMobile.API.Entities;
+using GymTrackerMobile.API.Features.Roles.Dtos;
 using MediatR;
 
 namespace GymTrackerMobile.API.Features.Roles.Commands
 {
-    public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, Role>
+    public class CreateRoleCommandHandler : IRequestHandler<CreateRoleCommand, RoleDto>
     {
         private readonly GymTrackerDbContext _context;
 
@@ -13,7 +14,7 @@ namespace GymTrackerMobile.API.Features.Roles.Commands
             _context = context;
         }
 
-        public async Task<Role> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
+        public async Task<RoleDto> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
         {
             var role = new Role
             {
@@ -22,7 +23,12 @@ namespace GymTrackerMobile.API.Features.Roles.Commands
             };
             _context.Roles.Add(role);
             await _context.SaveChangesAsync(cancellationToken);
-            return role;
+            return new RoleDto
+            {
+                Id = role.Id,
+                Name = role.Name,
+                Description = role.Description
+            };
         }
     }
 }
