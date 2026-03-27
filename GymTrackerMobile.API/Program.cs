@@ -3,6 +3,8 @@ using FluentValidation;
 using GymTrackerMobile.API.Common.Behaviors;
 using GymTrackerMobile.API.Common.Extensions;
 using GymTrackerMobile.API.Data;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +24,10 @@ namespace GymTrackerMobile.API
             // Configure Entity Framework Core with SQL Server
             builder.Services.AddDbContext<GymTrackerDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Configure Mapster
+            TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
+            builder.Services.AddSingleton(TypeAdapterConfig.GlobalSettings);
+            builder.Services.AddScoped<IMapper, ServiceMapper>();
             // Register FluentValidation validators
             builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 

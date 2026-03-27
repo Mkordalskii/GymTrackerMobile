@@ -1,5 +1,6 @@
 ﻿using GymTrackerMobile.API.Data;
 using GymTrackerMobile.API.Features.Roles.Dtos;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,12 +19,7 @@ namespace GymTrackerMobile.API.Features.Roles.Queries
         {
             return await _context.Roles
                 .AsNoTracking()//No tracking since we are only reading data and not modifying it
-                .Select(r => new RoleDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Description = r.Description
-                })
+                .ProjectToType<RoleDto>()//Mapowanie bezpośrednio w zapytaniu do bazy danych, co jest bardziej wydajne niż pobieranie encji i mapowanie ich w pamięci
                 .ToListAsync(cancellationToken);
         }
     }
