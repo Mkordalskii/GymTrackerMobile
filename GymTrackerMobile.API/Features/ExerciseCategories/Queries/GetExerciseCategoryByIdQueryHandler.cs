@@ -1,5 +1,6 @@
 ﻿using GymTrackerMobile.API.Data;
 using GymTrackerMobile.API.Features.ExerciseCategories.Dtos;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +20,7 @@ namespace GymTrackerMobile.API.Features.ExerciseCategories.Queries
             return await _context.ExerciseCategories
                 .AsNoTracking()
                 .Where(c => c.Id == request.Id)
-                .Select(c => new ExerciseCategoryDto
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description
-                })
+                .ProjectToType<ExerciseCategoryDto>()
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }

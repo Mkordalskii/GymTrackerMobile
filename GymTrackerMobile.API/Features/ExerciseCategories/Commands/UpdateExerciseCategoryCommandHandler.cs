@@ -1,4 +1,5 @@
 ﻿using GymTrackerMobile.API.Data;
+using MapsterMapper;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +8,12 @@ namespace GymTrackerMobile.API.Features.ExerciseCategories.Commands
     public class UpdateExerciseCategoryCommandHandler : IRequestHandler<UpdateExerciseCategoryCommand, bool>
     {
         private readonly GymTrackerDbContext _context;
+        private readonly IMapper _mapper;
 
-        public UpdateExerciseCategoryCommandHandler(GymTrackerDbContext context)
+        public UpdateExerciseCategoryCommandHandler(GymTrackerDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         public async Task<bool> Handle(UpdateExerciseCategoryCommand request, CancellationToken cancellationToken)
@@ -19,8 +22,7 @@ namespace GymTrackerMobile.API.Features.ExerciseCategories.Commands
 
             if (category == null) return false;
 
-            category.Name = request.Name;
-            category.Description = request.Description;
+            _mapper.Map(request, category);
 
             await _context.SaveChangesAsync(cancellationToken);
             return true;

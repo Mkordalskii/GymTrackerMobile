@@ -1,5 +1,6 @@
 ﻿using GymTrackerMobile.API.Data;
 using GymTrackerMobile.API.Features.Roles.Dtos;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,12 +20,7 @@ namespace GymTrackerMobile.API.Features.Roles.Queries
             return await _context.Roles
                 .AsNoTracking()
                 .Where(r => r.Id == request.Id)
-                .Select(r => new RoleDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Description = r.Description
-                })
+                .ProjectToType<RoleDto>() // Use Mapster to project the Role entity to RoleDto
                 .FirstOrDefaultAsync(cancellationToken);
         }
     }
