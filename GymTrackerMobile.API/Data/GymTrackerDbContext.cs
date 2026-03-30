@@ -12,6 +12,7 @@ namespace GymTrackerMobile.API.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<ExerciseCategory> ExerciseCategories => Set<ExerciseCategory>();
         public DbSet<Exercise> Exercises => Set<Exercise>();
+        public DbSet<MembershipType> MembershipTypes => Set<MembershipType>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,6 +50,11 @@ namespace GymTrackerMobile.API.Data
             modelBuilder.Entity<Exercise>()
                 .Property(e => e.DifficultyLevel)
                 .HasMaxLength(50)
+                .IsRequired();
+
+            modelBuilder.Entity<MembershipType>()
+                .Property(m => m.Name)
+                .HasMaxLength(100)
                 .IsRequired();
         }
     }
