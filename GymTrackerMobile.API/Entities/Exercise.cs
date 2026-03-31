@@ -6,8 +6,9 @@
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string DifficultyLevel { get; set; } = string.Empty;
-
         public int CategoryId { get; set; }
         public ExerciseCategory Category { get; set; } = null!;
+        public ICollection<WorkoutPlanExercise> WorkoutPlanExercises { get; set; } = new List<WorkoutPlanExercise>();
+        public ICollection<ProgressEntry> ProgressEntries { get; set; } = new List<ProgressEntry>();
     }
 }
