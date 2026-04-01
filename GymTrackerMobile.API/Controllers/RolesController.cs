@@ -2,10 +2,12 @@
 using GymTrackerMobile.API.Features.Roles.Dtos;
 using GymTrackerMobile.API.Features.Roles.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymTrackerMobile.API.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class RolesController : ControllerBase

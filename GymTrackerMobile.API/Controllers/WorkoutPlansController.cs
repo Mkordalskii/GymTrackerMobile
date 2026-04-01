@@ -2,10 +2,12 @@ using GymTrackerMobile.API.Features.WorkoutPlans.Commands;
 using GymTrackerMobile.API.Features.WorkoutPlans.Dtos;
 using GymTrackerMobile.API.Features.WorkoutPlans.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymTrackerMobile.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class WorkoutPlansController : ControllerBase

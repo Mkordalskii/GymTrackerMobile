@@ -2,10 +2,12 @@ using GymTrackerMobile.API.Features.ProgressEntries.Commands;
 using GymTrackerMobile.API.Features.ProgressEntries.Dtos;
 using GymTrackerMobile.API.Features.ProgressEntries.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymTrackerMobile.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProgressEntriesController : ControllerBase

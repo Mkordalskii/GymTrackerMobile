@@ -2,10 +2,12 @@ using GymTrackerMobile.API.Features.UserMemberships.Commands;
 using GymTrackerMobile.API.Features.UserMemberships.Dtos;
 using GymTrackerMobile.API.Features.UserMemberships.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GymTrackerMobile.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UserMembershipsController : ControllerBase

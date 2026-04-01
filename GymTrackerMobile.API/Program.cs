@@ -1,12 +1,16 @@
 using System.Reflection;
+using System.Text;
 using FluentValidation;
 using GymTrackerMobile.API.Common.Behaviors;
 using GymTrackerMobile.API.Common.Extensions;
 using GymTrackerMobile.API.Data;
+using GymTrackerMobile.API.Services.Auth;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace GymTrackerMobile.API
 {
@@ -16,41 +20,76 @@ namespace GymTrackerMobile.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
+            // Controllers
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+            // OpenAPI
             builder.Services.AddOpenApi();
-            // Configure Entity Framework Core with SQL Server
+
+            // Database
             builder.Services.AddDbContext<GymTrackerDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-            // Configure Mapster
-            TypeAdapterConfig.GlobalSettings.Scan(Assembly.GetExecutingAssembly());
-            builder.Services.AddSingleton(TypeAdapterConfig.GlobalSettings);
+
+            // Mapster
+            var config = TypeAdapterConfig.GlobalSettings;
+            config.Scan(Assembly.GetExecutingAssembly());
+
+            builder.Services.AddSingleton(config);
             builder.Services.AddScoped<IMapper, ServiceMapper>();
-            // Register FluentValidation validators
+
+            // Auth services
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
+
+            // FluentValidation
             builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            // MediatR + Pipeline Behaviors
             builder.Services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-                // kolejność ma znaczenie
                 cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
                 cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
             });
-            // ten serwis jest potrzebny, aby FluentValidation nie zwracał automatycznie błędu 400 Bad Request, gdy model jest niepoprawny, ponieważ chcemy obsłużyć to sami w ValidationBehavior
+
+            // Disable automatic ModelState 400 response
             builder.Services.Configure<ApiBehaviorOptions>(options =>
             {
                 options.SuppressModelStateInvalidFilter = true;
             });
 
+            // JWT Authentication
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+            var jwtKey = jwtSettings["Key"]
+                ?? throw new InvalidOperationException("JWT Key is not configured.");
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings["Issuer"],
+                        ValidAudience = jwtSettings["Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            builder.Services.AddAuthorization();
+
             var app = builder.Build();
+
+            // Global exception handling
             app.UseGlobalExceptionHandler();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+
                 app.UseSwaggerUI(options =>
                 {
                     options.SwaggerEndpoint("/openapi/v1.json", "GymTracker API v1");
@@ -60,8 +99,8 @@ namespace GymTrackerMobile.API
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
-
 
             app.MapControllers();
 
