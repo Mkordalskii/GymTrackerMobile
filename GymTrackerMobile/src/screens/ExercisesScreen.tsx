@@ -1,76 +1,200 @@
-import React from 'react';
-import {Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 
-import {ExerciseListItem} from '../components/ExerciseListItem';
-import {FilterChip} from '../components/FilterChip';
+import {gymApi} from '../api/gym';
+import {EmptyState} from '../components/EmptyState';
+import {FormField} from '../components/FormField';
+import {MessageBanner} from '../components/MessageBanner';
+import {ModalCard} from '../components/ModalCard';
+import {PrimaryButton} from '../components/PrimaryButton';
+import {ResourceCard} from '../components/ResourceCard';
 import {SearchInput} from '../components/SearchInput';
 import {SectionTitle} from '../components/SectionTitle';
-import {ExerciseFilter, ExerciseItem, filters} from '../data/mockData';
+import {AuthSession, ExerciseCategoryDto, ExerciseDto} from '../types/api';
 
 type ExercisesScreenProps = {
-  filteredExercises: ExerciseItem[];
-  searchText: string;
-  selectedFilter: ExerciseFilter;
-  onSearchChange: (value: string) => void;
-  onFilterChange: (value: ExerciseFilter) => void;
+  session: AuthSession;
 };
 
-export function ExercisesScreen({
-  filteredExercises,
-  searchText,
-  selectedFilter,
-  onSearchChange,
-  onFilterChange,
-}: ExercisesScreenProps) {
+export function ExercisesScreen({session}: ExercisesScreenProps) {
+  const [exercises, setExercises] = useState<ExerciseDto[]>([]);
+  const [categories, setCategories] = useState<ExerciseCategoryDto[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [difficultyLevel, setDifficultyLevel] = useState('Medium');
+  const [categoryId, setCategoryId] = useState('1');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const [exerciseItems, categoryItems] = await Promise.all([
+        gymApi.getExercises(session.token),
+        gymApi.getExerciseCategories(session.token),
+      ]);
+
+      setExercises(exerciseItems);
+      setCategories(categoryItems);
+      if (categoryItems[0]) {
+        setCategoryId(String(categoryItems[0].id));
+      }
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Nie udalo sie pobrac cwiczen.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [session.token]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  const filteredExercises = useMemo(() => {
+    return exercises.filter(item =>
+      item.name.toLowerCase().includes(searchText.trim().toLowerCase()),
+    );
+  }, [exercises, searchText]);
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setDifficultyLevel('Medium');
+  };
+
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      await gymApi.createExercise(session.token, {
+        name,
+        description: description || null,
+        difficultyLevel,
+        categoryId: Number(categoryId),
+      });
+
+      setIsModalVisible(false);
+      resetForm();
+      await loadData();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'Nie udalo sie dodac cwiczenia.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await gymApi.deleteExercise(session.token, id);
+      await loadData();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Nie udalo sie usunac cwiczenia.',
+      );
+    }
+  };
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#1F8A70" />;
+  }
+
   return (
     <View>
-      <SearchInput value={searchText} onChangeText={onSearchChange} />
+      {error ? <MessageBanner tone="error" text={error} /> : null}
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filtersRow}>
-        {filters.map(filter => (
-          <FilterChip
-            key={filter}
-            label={filter}
-            isActive={filter === selectedFilter}
-            onPress={() => onFilterChange(filter)}
-          />
-        ))}
-      </ScrollView>
+      <SearchInput value={searchText} onChangeText={setSearchText} />
 
       <View style={styles.section}>
         <View style={styles.headerRow}>
           <SectionTitle title="Lista cwiczen" />
-          <Pressable style={styles.addButton}>
-            <Text style={styles.addButtonText}>+ Dodaj</Text>
-          </Pressable>
+          <PrimaryButton
+            title="+ Dodaj"
+            onPress={() => setIsModalVisible(true)}
+          />
         </View>
 
-        {filteredExercises.map(item => (
-          <ExerciseListItem key={item.id} item={item} />
-        ))}
-
         {filteredExercises.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>Brak wynikow</Text>
-            <Text style={styles.emptyStateText}>
-              Zmien filtr albo wpisz inna nazwe cwiczenia.
-            </Text>
-          </View>
-        ) : null}
+          <EmptyState
+            title="Brak cwiczen"
+            description="Dodaj pierwsze cwiczenie albo zmien fraze wyszukiwania."
+          />
+        ) : (
+          filteredExercises.map(item => (
+            <ResourceCard
+              key={item.id}
+              title={item.name}
+              description={item.description || item.categoryName}
+              meta={`${item.categoryName} | ${item.difficultyLevel}`}
+              onDelete={() => handleDelete(item.id)}
+            />
+          ))
+        )}
       </View>
+
+      <ModalCard
+        visible={isModalVisible}
+        title="Nowe cwiczenie"
+        onClose={() => setIsModalVisible(false)}>
+        <ScrollView>
+          <FormField
+            label="Nazwa"
+            value={name}
+            onChangeText={setName}
+            placeholder="Bench Press"
+          />
+          <FormField
+            label="Opis"
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Krotki opis cwiczenia"
+            multiline
+          />
+          <FormField
+            label="Poziom trudnosci"
+            value={difficultyLevel}
+            onChangeText={setDifficultyLevel}
+            placeholder="Easy / Medium / Hard"
+          />
+          <FormField
+            label="Id kategorii"
+            value={categoryId}
+            onChangeText={setCategoryId}
+            keyboardType="numeric"
+            placeholder={categories.map(item => `${item.id}:${item.name}`).join(', ')}
+          />
+          <PrimaryButton
+            title={isSubmitting ? 'Zapisywanie...' : 'Zapisz cwiczenie'}
+            onPress={handleCreate}
+            disabled={isSubmitting}
+          />
+        </ScrollView>
+      </ModalCard>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  filtersRow: {
-    paddingTop: 16,
-    paddingBottom: 4,
-    gap: 10,
-  },
   section: {
     marginTop: 24,
   },
@@ -79,33 +203,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 12,
-  },
-  addButton: {
-    backgroundColor: '#1F8A70',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  emptyState: {
-    backgroundColor: '#FFF7E8',
-    borderRadius: 22,
-    padding: 20,
-    marginTop: 8,
-  },
-  emptyStateTitle: {
-    color: '#1F241F',
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  emptyStateText: {
-    color: '#6D6A63',
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

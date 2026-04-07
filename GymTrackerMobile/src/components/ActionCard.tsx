@@ -1,15 +1,15 @@
-//Pomaranczowe karty z Szybkich akcji
 import React from 'react';
 import {Pressable, StyleSheet, Text} from 'react-native';
 
 type ActionCardProps = {
   title: string;
   subtitle: string;
+  onPress?: () => void;
 };
 
-export function ActionCard({title, subtitle}: ActionCardProps) {
+export function ActionCard({title, subtitle, onPress}: ActionCardProps) {
   return (
-    <Pressable style={styles.card}>
+    <Pressable style={styles.card} onPress={onPress}>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
     </Pressable>

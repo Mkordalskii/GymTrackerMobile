@@ -2,7 +2,8 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
-import {TabKey, tabs} from '../data/navigation';
+import {tabs} from '../data/navigation';
+import type {TabKey} from '../data/navigation';
 
 type BottomTabBarProps = {
   activeTab: TabKey;

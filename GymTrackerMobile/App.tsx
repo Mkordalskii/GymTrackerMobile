@@ -1,53 +1,95 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 
-import {exercises, ExerciseFilter, TabKey} from './src/data/mockData';
-import {MainLayout} from './src/layouts/MainLayout';
-import {ExercisesScreen} from './src/screens/ExercisesScreen';
-import {HomeScreen} from './src/screens/HomeScreen';
-import {PlaceholderScreen} from './src/screens/PlaceholderScreen';
+import {loginRequest, registerRequest} from './src/api/auth';
+import {gymApi} from './src/api/gym';
+import {AuthFormScreen} from './src/screens/AuthFormScreen';
+import {ShellScreen} from './src/screens/ShellScreen';
+import {AuthMode, AuthSession} from './src/types/api';
 
 function App(): React.JSX.Element {
-  const [activeTab, setActiveTab] = useState<TabKey>('home');
-  const [searchText, setSearchText] = useState('');
-  const [selectedFilter, setSelectedFilter] =
-    useState<ExerciseFilter>('Wszystkie');
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
 
-    //Jeżeli searchText lub selectedFilter się zmienią, to przefiltruj exercises i zwróć tylko te, które pasują do obu kryteriów
-  const filteredExercises = useMemo(() => {
-    return exercises.filter(item => {
-      const matchesFilter =
-        selectedFilter === 'Wszystkie' || item.category === selectedFilter;
-      const matchesSearch = item.name
-        .toLowerCase()
-        .includes(searchText.trim().toLowerCase());
+  const hydrateSession = useCallback(
+    async (
+      token: string,
+      email: string,
+      role: string,
+      expiresAtUtc: string,
+    ): Promise<AuthSession> => {
+      const users = await gymApi.getUsers(token);
+      const currentUser = users.find(
+        item => item.email.toLowerCase() === email.toLowerCase(),
+      );
 
-      return matchesFilter && matchesSearch;
-    });
-  }, [searchText, selectedFilter]);
+      if (!currentUser) {
+        throw new Error('Nie udalo sie dopasowac zalogowanego uzytkownika.');
+      }
 
-  const currentTitle = activeTab === 'home' ? 'Dashboard' : 'Cwiczenia';
-
-  return (
-    <MainLayout
-      title={currentTitle}
-      actionLabel={activeTab === 'home' ? '+' : '...'}
-      activeTab={activeTab}
-      onTabPress={setActiveTab}>
-      {activeTab === 'home' ? <HomeScreen /> : null}
-      {activeTab === 'exercises' ? (
-        <ExercisesScreen
-          filteredExercises={filteredExercises}
-          searchText={searchText}
-          selectedFilter={selectedFilter}
-          onSearchChange={setSearchText}
-          onFilterChange={setSelectedFilter}
-        />
-      ) : null}
-      {activeTab !== 'home' && activeTab !== 'exercises' ? (
-        <PlaceholderScreen tab={activeTab} />
-      ) : null}
-    </MainLayout>
+      return {
+        token,
+        email,
+        role,
+        expiresAtUtc,
+        userId: currentUser.id,
+      };
+    },
+    [],
   );
+
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    const response = await loginRequest({email, password});
+    setSession(
+      await hydrateSession(
+        response.token,
+        response.email,
+        response.role,
+        response.expiresAtUtc,
+      ),
+    );
+  }, [hydrateSession]);
+
+  const handleRegister = useCallback(
+    async (name: string, email: string, password: string) => {
+      const response = await registerRequest({
+        name,
+        email,
+        password,
+        roleId: 2,
+      });
+      setSession(
+        await hydrateSession(
+          response.token,
+          response.email,
+          response.role,
+          response.expiresAtUtc,
+        ),
+      );
+    },
+    [hydrateSession],
+  );
+
+  const handleLogout = useCallback(() => {
+    setSession(null);
+    setAuthMode('login');
+  }, []);
+
+  const authScreen = useMemo(() => {
+    return (
+      <AuthFormScreen
+        mode={authMode}
+        onChangeMode={setAuthMode}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+      />
+    );
+  }, [authMode, handleLogin, handleRegister]);
+
+  if (!session) {
+    return authScreen;
+  }
+
+  return <ShellScreen session={session} onLogout={handleLogout} />;
 }
 
 export default App;

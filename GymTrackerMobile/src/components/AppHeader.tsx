@@ -1,23 +1,31 @@
-//Górny pasek z tytułem i przyciskiem akcji
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 
 type AppHeaderProps = {
   title: string;
-  actionLabel: string;
+  actionLabel?: string;
+  onActionPress?: () => void;
 };
 
-export function AppHeader({title, actionLabel}: AppHeaderProps) {
+export function AppHeader({
+  title,
+  actionLabel,
+  onActionPress,
+}: AppHeaderProps) {
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.eyebrow}>Gym Tracker</Text>
+        <Text style={styles.eyebrow}>GymFlow</Text>
         <Text style={styles.title}>{title}</Text>
       </View>
 
-      <Pressable style={styles.action}>
-        <Text style={styles.actionText}>{actionLabel}</Text>
-      </Pressable>
+      {actionLabel ? (
+        <Pressable style={styles.action} onPress={onActionPress}>
+          <Text style={styles.actionText}>{actionLabel}</Text>
+        </Pressable>
+      ) : (
+        <View style={styles.headerSpacer} />
+      )}
     </View>
   );
 }
@@ -44,8 +52,9 @@ const styles = StyleSheet.create({
     color: '#1F241F',
   },
   action: {
-    width: 42,
+    minWidth: 42,
     height: 42,
+    paddingHorizontal: 12,
     borderRadius: 21,
     backgroundColor: '#1F8A70',
     alignItems: 'center',
@@ -60,5 +69,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  headerSpacer: {
+    width: 42,
   },
 });

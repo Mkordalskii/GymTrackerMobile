@@ -1,30 +1,91 @@
-import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 
+import {gymApi} from '../api/gym';
 import {ActionCard} from '../components/ActionCard';
 import {Badge} from '../components/Badge';
+import {MessageBanner} from '../components/MessageBanner';
 import {SectionTitle} from '../components/SectionTitle';
 import {StatCard} from '../components/StatCard';
+import type {AuthSession, TabKey, WorkoutSessionDto} from '../types/api';
+import {formatDate} from '../utils/format';
 
-export function HomeScreen() {
+type HomeScreenProps = {
+  session: AuthSession;
+  onNavigate: (tab: TabKey) => void;
+};
+
+export function HomeScreen({session, onNavigate}: HomeScreenProps) {
+  const [plansCount, setPlansCount] = useState(0);
+  const [exercisesCount, setExercisesCount] = useState(0);
+  const [latestSession, setLatestSession] = useState<WorkoutSessionDto | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const [plans, exercises, sessions] = await Promise.all([
+        gymApi.getWorkoutPlans(session.token),
+        gymApi.getExercises(session.token),
+        gymApi.getWorkoutSessions(session.token),
+      ]);
+
+      const ownPlans = plans.filter(item => item.userId === session.userId);
+      const ownSessions = sessions
+        .filter(item => item.userId === session.userId)
+        .sort(
+          (a, b) =>
+            new Date(b.sessionDate).getTime() -
+            new Date(a.sessionDate).getTime(),
+        );
+
+      setPlansCount(ownPlans.length);
+      setExercisesCount(exercises.length);
+      setLatestSession(ownSessions[0] ?? null);
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Nie udalo sie pobrac danych dashboardu.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [session.token, session.userId]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#1F8A70" />;
+  }
+
   return (
     <View>
+      {error ? <MessageBanner tone="error" text={error} /> : null}
+
       <View style={styles.heroCard}>
         <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>Witaj, Adam</Text>
+          <Text style={styles.heroBadgeText}>Witaj, {session.email}</Text>
         </View>
-        <Text style={styles.heroTitle}>Twoj plan na dzisiaj jest gotowy</Text>
+        <Text style={styles.heroTitle}>Twoje dane sa juz zsynchronizowane</Text>
         <Text style={styles.heroSubtitle}>
-          Szybko sprawdz postepy i wroc do najwazniejszych akcji.
+          Frontend pobiera teraz prawdziwe informacje z backendu .NET.
         </Text>
       </View>
 
       <View style={styles.section}>
         <SectionTitle title="Twoje podsumowanie" />
         <View style={styles.statsGrid}>
-          <StatCard label="Aktywny plan" value="FBW 3 dni" />
-          <StatCard label="Ostatni trening" value="55 min" />
-          <StatCard label="Cwiczenia" value="24" />
+          <StatCard label="Twoje plany" value={String(plansCount)} />
+          <StatCard label="Dostepne cwiczenia" value={String(exercisesCount)} />
+          <StatCard label="Rola" value={session.role} />
         </View>
       </View>
 
@@ -32,12 +93,14 @@ export function HomeScreen() {
         <SectionTitle title="Szybkie akcje" />
         <View style={styles.actionsRow}>
           <ActionCard
-            title="Dodaj sesje"
-            subtitle="Zapisz trening w kilku krokach"
+            title="Przejdz do planow"
+            subtitle="Dodaj nowy plan treningowy"
+            onPress={() => onNavigate('plans')}
           />
           <ActionCard
-            title="Zobacz plan"
-            subtitle="Sprawdz cwiczenia na dzisiaj"
+            title="Sprawdz postepy"
+            subtitle="Zobacz wpisy i historie obciazen"
+            onPress={() => onNavigate('progress')}
           />
         </View>
       </View>
@@ -45,15 +108,25 @@ export function HomeScreen() {
       <View style={styles.section}>
         <SectionTitle title="Ostatnia aktywnosc" />
         <View style={styles.activityCard}>
-          <View style={styles.activityHeader}>
-            <Text style={styles.activityTitle}>Trening FBW</Text>
-            <Text style={styles.activityDate}>17.03.2026</Text>
-          </View>
-          <Text style={styles.activityMeta}>Klatka, plecy, nogi</Text>
-          <View style={styles.activityFooter}>
-            <Badge label="55 min" />
-            <Badge label="7 cwiczen" />
-          </View>
+          {latestSession ? (
+            <>
+              <Text style={styles.activityTitle}>Ostatnia sesja</Text>
+              <Text style={styles.activityMeta}>
+                {formatDate(latestSession.sessionDate)}
+              </Text>
+              <View style={styles.activityFooter}>
+                <Badge label={`${latestSession.durationMinutes} min`} />
+                <Badge label={`Plan #${latestSession.workoutPlanId}`} />
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.activityTitle}>Brak zapisanych sesji</Text>
+              <Text style={styles.activityMeta}>
+                Dodaj pierwsza sesje z zakladki Sesje.
+              </Text>
+            </>
+          )}
         </View>
       </View>
     </View>
@@ -108,20 +181,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 18,
   },
-  activityHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    gap: 12,
-  },
   activityTitle: {
     color: '#1F241F',
     fontSize: 18,
     fontWeight: '700',
-  },
-  activityDate: {
-    color: '#6D6A63',
-    fontSize: 13,
+    marginBottom: 8,
   },
   activityMeta: {
     color: '#6D6A63',
