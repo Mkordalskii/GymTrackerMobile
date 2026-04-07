@@ -58,6 +58,16 @@ namespace GymTrackerMobile.API
                 options.SuppressModelStateInvalidFilter = true;
             });
 
+            // CORS - dla development zezwalaj na wszystkie połączenia
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    policy => policy
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+            });
+
             // JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSettings["Key"]
@@ -101,6 +111,7 @@ namespace GymTrackerMobile.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseCors("AllowAll");
 
             app.MapControllers();
 
