@@ -8,6 +8,7 @@ import {MessageBanner} from '../components/MessageBanner';
 import {ModalCard} from '../components/ModalCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ResourceCard} from '../components/ResourceCard';
+import {SelectField} from '../components/SelectField';
 import {SectionTitle} from '../components/SectionTitle';
 import {AuthSession, ExerciseDto, ProgressEntryDto} from '../types/api';
 import {formatDateTime} from '../utils/format';
@@ -22,7 +23,7 @@ export function ProgressScreen({session}: ProgressScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [exerciseId, setExerciseId] = useState('1');
+  const [exerciseId, setExerciseId] = useState('');
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('8');
   const [comment, setComment] = useState('');
@@ -66,7 +67,17 @@ export function ProgressScreen({session}: ProgressScreenProps) {
       );
   }, [entries, session.userId]);
 
+  const exerciseOptions = useMemo(
+    () => exercises.map(item => ({value: String(item.id), label: item.name})),
+    [exercises],
+  );
+
   const handleCreate = async () => {
+    if (!exerciseId) {
+      setError('Wybierz cwiczenie.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -129,7 +140,10 @@ export function ProgressScreen({session}: ProgressScreenProps) {
         ownEntries.map(item => (
           <ResourceCard
             key={item.id}
-            title={`Cwiczenie #${item.exerciseId}`}
+            title={
+              exercises.find(exercise => exercise.id === item.exerciseId)?.name ||
+              `Cwiczenie #${item.exerciseId}`
+            }
             description={item.comment || 'Bez komentarza'}
             meta={`${item.weight} kg | ${item.reps} powt. | ${formatDateTime(
               item.createdAt,
@@ -144,12 +158,12 @@ export function ProgressScreen({session}: ProgressScreenProps) {
         title="Nowy wpis progresu"
         onClose={() => setIsModalVisible(false)}>
         <ScrollView>
-          <FormField
-            label="Id cwiczenia"
+          <SelectField
+            label="Cwiczenie"
             value={exerciseId}
-            onChangeText={setExerciseId}
-            keyboardType="numeric"
-            placeholder={exercises.map(item => `${item.id}:${item.name}`).join(', ')}
+            onChange={setExerciseId}
+            options={exerciseOptions}
+            emptyMessage="Brak cwiczen. Najpierw dodaj cwiczenie."
           />
           <FormField
             label="Ciezar (kg)"
@@ -173,7 +187,7 @@ export function ProgressScreen({session}: ProgressScreenProps) {
           <PrimaryButton
             title={isSubmitting ? 'Zapisywanie...' : 'Zapisz progres'}
             onPress={handleCreate}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !exerciseId}
           />
         </ScrollView>
       </ModalCard>

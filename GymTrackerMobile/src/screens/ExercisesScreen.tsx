@@ -14,6 +14,7 @@ import {ModalCard} from '../components/ModalCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ResourceCard} from '../components/ResourceCard';
 import {SearchInput} from '../components/SearchInput';
+import {SelectField} from '../components/SelectField';
 import {SectionTitle} from '../components/SectionTitle';
 import {AuthSession, ExerciseCategoryDto, ExerciseDto} from '../types/api';
 
@@ -31,7 +32,7 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState('Medium');
-  const [categoryId, setCategoryId] = useState('1');
+  const [categoryId, setCategoryId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -70,6 +71,20 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
     );
   }, [exercises, searchText]);
 
+  const categoryOptions = useMemo(
+    () => categories.map(item => ({value: String(item.id), label: item.name})),
+    [categories],
+  );
+
+  const difficultyOptions = useMemo(
+    () => [
+      {value: 'Easy', label: 'Latwy'},
+      {value: 'Medium', label: 'Sredni'},
+      {value: 'Hard', label: 'Trudny'},
+    ],
+    [],
+  );
+
   const resetForm = () => {
     setName('');
     setDescription('');
@@ -77,6 +92,11 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
   };
 
   const handleCreate = async () => {
+    if (!categoryId) {
+      setError('Wybierz kategorie cwiczenia.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
 
@@ -170,23 +190,23 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
             placeholder="Krotki opis cwiczenia"
             multiline
           />
-          <FormField
+          <SelectField
             label="Poziom trudnosci"
             value={difficultyLevel}
-            onChangeText={setDifficultyLevel}
-            placeholder="Easy / Medium / Hard"
+            onChange={setDifficultyLevel}
+            options={difficultyOptions}
           />
-          <FormField
-            label="Id kategorii"
+          <SelectField
+            label="Kategoria"
             value={categoryId}
-            onChangeText={setCategoryId}
-            keyboardType="numeric"
-            placeholder={categories.map(item => `${item.id}:${item.name}`).join(', ')}
+            onChange={setCategoryId}
+            options={categoryOptions}
+            emptyMessage="Brak kategorii. Dodaj kategorie cwiczen w API."
           />
           <PrimaryButton
             title={isSubmitting ? 'Zapisywanie...' : 'Zapisz cwiczenie'}
             onPress={handleCreate}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !categoryId}
           />
         </ScrollView>
       </ModalCard>

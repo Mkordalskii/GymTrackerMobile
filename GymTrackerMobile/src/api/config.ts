@@ -4,17 +4,19 @@ const getBaseUrl = (): string => {
   if (__DEV__) {
     // Development
     if (Platform.OS === 'android') {
-      return 'http://192.168.178.65:32777/api';
+      // Android emulator maps host loopback to 10.0.2.2
+      return 'http://10.0.2.2:5269';
     } else if (Platform.OS === 'ios') {
-      return 'http://192.168.178.65:32777/api';
+      // iOS simulator can use localhost directly
+      return 'http://localhost:5269';
     }
   }
   
   // Production
-  return 'https://your-production-api.com/api';
+  return 'https://your-production-api.com';
 };
 
-export const API_BASE_URL = getBaseUrl;
+export const API_BASE_URL = getBaseUrl();
 // Debug
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('Platform:', Platform.OS);

@@ -8,6 +8,49 @@ type RequestOptions = {
   body?: unknown;
 };
 
+type ApiErrorPayload = {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string | null;
+  errors?: Record<string, string[]>;
+};
+
+const mapApiErrorToMessage = (error: ApiErrorPayload): string => {
+  if (error.errors) {
+    const validationMessages = Object.values(error.errors).flat().filter(Boolean);
+    if (validationMessages.length > 0) {
+      return validationMessages.join('\n');
+    }
+  }
+
+  if (error.status === 401 || error.type === 'Unauthorized') {
+    return 'Nieprawidlowy email lub haslo.';
+  }
+
+  if (error.status === 403) {
+    return 'Brak uprawnien do wykonania tej operacji.';
+  }
+
+  if (error.status === 404) {
+    return 'Nie znaleziono zasobu.';
+  }
+
+  if (error.status === 409) {
+    return 'Dane konfliktuja z istniejacym rekordem.';
+  }
+
+  if (error.title) {
+    return error.title;
+  }
+
+  if (error.detail) {
+    return error.detail;
+  }
+
+  return 'Wystapil blad podczas komunikacji z serwerem.';
+};
+
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
@@ -23,14 +66,31 @@ export async function apiRequest<T>(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || 'Request failed.');
+    if (!responseText.trim()) {
+      throw new Error('Wystapil blad podczas komunikacji z serwerem.');
+    }
+
+    let parsedError: ApiErrorPayload | null = null;
+    try {
+      parsedError = JSON.parse(responseText) as ApiErrorPayload;
+    } catch {
+      parsedError = null;
+    }
+
+    if (parsedError) {
+      throw new Error(mapApiErrorToMessage(parsedError));
+    }
+
+    // If backend returns plain text instead of JSON.
+    throw new Error(responseText);
   }
 
-  if (response.status === 204) {
+  if (response.status === 204 || !responseText.trim()) {
     return undefined as T;
   }
 
-  return (await response.json()) as T;
+  return JSON.parse(responseText) as T;
 }

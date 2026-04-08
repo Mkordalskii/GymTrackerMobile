@@ -8,6 +8,7 @@ import {MessageBanner} from '../components/MessageBanner';
 import {ModalCard} from '../components/ModalCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ResourceCard} from '../components/ResourceCard';
+import {SelectField} from '../components/SelectField';
 import {SectionTitle} from '../components/SectionTitle';
 import {AuthSession, WorkoutPlanDto, WorkoutSessionDto} from '../types/api';
 import {formatDateTime} from '../utils/format';
@@ -22,7 +23,7 @@ export function SessionsScreen({session}: SessionsScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [workoutPlanId, setWorkoutPlanId] = useState('1');
+  const [workoutPlanId, setWorkoutPlanId] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('45');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,7 +67,22 @@ export function SessionsScreen({session}: SessionsScreenProps) {
       );
   }, [session.userId, sessions]);
 
+  const ownPlans = useMemo(
+    () => plans.filter(item => item.userId === session.userId),
+    [plans, session.userId],
+  );
+
+  const planOptions = useMemo(
+    () => ownPlans.map(item => ({value: String(item.id), label: item.name})),
+    [ownPlans],
+  );
+
   const handleCreate = async () => {
+    if (!workoutPlanId) {
+      setError('Wybierz plan treningowy.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -127,7 +143,10 @@ export function SessionsScreen({session}: SessionsScreenProps) {
         ownSessions.map(item => (
           <ResourceCard
             key={item.id}
-            title={`Plan #${item.workoutPlanId}`}
+            title={
+              plans.find(plan => plan.id === item.workoutPlanId)?.name ||
+              `Plan #${item.workoutPlanId}`
+            }
             description={item.notes || 'Bez notatek'}
             meta={`${formatDateTime(item.sessionDate)} | ${item.durationMinutes} min`}
             onDelete={() => handleDelete(item.id)}
@@ -140,15 +159,12 @@ export function SessionsScreen({session}: SessionsScreenProps) {
         title="Nowa sesja"
         onClose={() => setIsModalVisible(false)}>
         <ScrollView>
-          <FormField
-            label="Id planu"
+          <SelectField
+            label="Plan treningowy"
             value={workoutPlanId}
-            onChangeText={setWorkoutPlanId}
-            keyboardType="numeric"
-            placeholder={plans
-              .filter(item => item.userId === session.userId)
-              .map(item => `${item.id}:${item.name}`)
-              .join(', ')}
+            onChange={setWorkoutPlanId}
+            options={planOptions}
+            emptyMessage="Brak planow. Najpierw dodaj plan treningowy."
           />
           <FormField
             label="Czas trwania (min)"
@@ -166,7 +182,7 @@ export function SessionsScreen({session}: SessionsScreenProps) {
           <PrimaryButton
             title={isSubmitting ? 'Zapisywanie...' : 'Zapisz sesje'}
             onPress={handleCreate}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !workoutPlanId}
           />
         </ScrollView>
       </ModalCard>

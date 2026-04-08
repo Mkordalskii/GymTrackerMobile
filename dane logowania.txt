@@ -1,0 +1,2 @@
+user@gym.com / User123!
+admin@gym.com / Admin123!
