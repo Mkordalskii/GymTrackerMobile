@@ -1,3 +1,4 @@
+//odpowiada za komunikacje z backendem w zakresie autoryzacji, logowania i rejestracji uzytkownikow
 import {apiRequest} from './http';
 import {AuthResponseDto, LoginPayload, RegisterPayload} from '../types/api';
 

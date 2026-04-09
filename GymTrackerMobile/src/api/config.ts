@@ -1,3 +1,4 @@
+// plik konfiguracyjny dla API, zawiera logike wyboru odpowiedniego URL w zaleznosci od srodowiska (dev/prod) i platformy (android/ios)
 import {Platform} from 'react-native';
 
 const getBaseUrl = (): string => {

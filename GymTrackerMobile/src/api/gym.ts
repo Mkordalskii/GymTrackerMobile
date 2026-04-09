@@ -1,3 +1,4 @@
+//plik zawiera wszystkie funkcje do komunikacji z backendem w zakresie zarzadzania cwiczeniami, planami treningowymi, sesjami treningowymi, postepami i czlonkostwami uzytkownikow
 import {apiRequest} from './http';
 import {
   CreateExercisePayload,

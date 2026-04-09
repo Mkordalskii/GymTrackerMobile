@@ -1,3 +1,4 @@
+//nawigacja w aplikacji, zawiera definicję dostępnych zakładek i ich kluczy, które są używane w całej aplikacji do określania, która zakładka jest aktywna i jakie dane powinny być wyświetlane. Dzięki temu mamy centralne miejsce, gdzie możemy zarządzać strukturą nawigacji naszej aplikacji.
 import type {TabKey} from '../types/api';
 
 export const tabs: Array<{key: TabKey; label: string; icon: string}> = [

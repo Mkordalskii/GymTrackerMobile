@@ -1,3 +1,4 @@
+// plik odpowiedzialny za komunikacje z backendem, obsluguje bledy i mapuje je na przyjazne komunikaty dla uzytkownika
 import {API_BASE_URL} from './config';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -18,7 +19,7 @@ type ApiErrorPayload = {
 
 const mapApiErrorToMessage = (error: ApiErrorPayload): string => {
   if (error.errors) {
-    const validationMessages = Object.values(error.errors).flat().filter(Boolean);
+    const validationMessages = Object.values(error.errors).flat().filter(Boolean); // filter(Boolean) ponieważ usuwa wszystkie wartości, które są falsy (null, undefined, empty string, 0, false). W tym przypadku chcemy usunąć puste komunikaty błędów, które mogą się pojawić w tablicy.
     if (validationMessages.length > 0) {
       return validationMessages.join('\n');
     }
@@ -61,14 +62,14 @@ export async function apiRequest<T>(
       'Content-Type': 'application/json',
       ...(options.token
         ? {Authorization: `Bearer ${options.token}`}
-        : undefined),
+        : undefined), // ... operator rozkłada obiekt na pojedyncze pary klucz-wartość. Jeśli options.token jest prawdziwy (nie null, undefined, itp.), to dodajemy do nagłówków parę Authorization
     },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+    body: options.body ? JSON.stringify(options.body) : undefined, 
+  }); // fetch automatycznie ustawia Content-Type na application/json, gdy body jest obiektem, ale explicite ustawiamy to dla pewności. Jeśli body jest undefined, to nie ustawiamy go w ogóle, ponieważ niektóre serwery mogą mieć problem z obsługą nagłówka Content-Type bez rzeczywistego ciała żądania.
 
   const responseText = await response.text();
 
-  if (!response.ok) {
+  if (!response.ok) { // statusy poniżej 200 lub powyżej 299 są traktowane jako błędy
     if (!responseText.trim()) {
       throw new Error('Wystapil blad podczas komunikacji z serwerem.');
     }
@@ -84,7 +85,7 @@ export async function apiRequest<T>(
       throw new Error(mapApiErrorToMessage(parsedError));
     }
 
-    // If backend returns plain text instead of JSON.
+    // jeśli nie udało się sparsować błędu, zwracamy surowy tekst odpowiedzi jako komunikat błędu
     throw new Error(responseText);
   }
 
