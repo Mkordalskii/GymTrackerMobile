@@ -1,11 +1,15 @@
 import React from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   View,
 } from 'react-native';
+import {
+  SafeAreaView,
+  SafeAreaProvider,
+  initialWindowMetrics,
+} from 'react-native-safe-area-context'; //zamiast SafeAreaView używamy SafeAreaProvider, który zapewnia kontekst dla całej aplikacji i pozwala na korzystanie z bezpiecznych obszarów na różnych urządzeniach, bo DevTools pokazywał warnig z SafeAreaView
 
 import {AppHeader} from '../components/AppHeader';
 import {BottomTabBar} from '../components/BottomTabBar';
@@ -29,6 +33,7 @@ export function MainLayout({
   children,
 }: MainLayoutProps) {
   return (
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#F4F1EA" />
 
@@ -48,6 +53,7 @@ export function MainLayout({
         <BottomTabBar activeTab={activeTab} onTabPress={onTabPress} />
       </View>
     </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
