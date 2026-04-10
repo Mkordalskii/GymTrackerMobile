@@ -100,6 +100,58 @@ export type UserMembershipDto = {
   status: string;
 };
 
+export type RoleDto = {
+  id: number;
+  name: string;
+  description?: string | null;
+};
+
+export type WorkoutPlanExerciseDto = {
+  id: number;
+  workoutPlanId: number;
+  exerciseId: number;
+  sets: number;
+  reps: number;
+  orderIndex: number;
+};
+
+export type CreateRolePayload = {
+  name: string;
+  description?: string | null;
+};
+
+export type CreateMembershipTypePayload = {
+  name: string;
+  description?: string | null;
+};
+
+export type CreateUserMembershipPayload = {
+  userId: number;
+  membershipTypeId: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+};
+
+export type CreateExerciseCategoryPayload = {
+  name: string;
+  description?: string | null;
+};
+
+export type CreateWorkoutPlanExercisePayload = {
+  workoutPlanId: number;
+  exerciseId: number;
+  sets: number;
+  reps: number;
+  orderIndex: number;
+};
+
+export type UpdateUserPayload = {
+  name: string;
+  email: string;
+  roleId: number;
+};
+
 export type CreateExercisePayload = {
   name: string;
   description?: string | null;
