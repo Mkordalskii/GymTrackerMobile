@@ -182,3 +182,38 @@ export type CreateProgressEntryPayload = {
   createdAt: string;
   comment?: string | null;
 };
+
+export type UpdateExercisePayload = {
+  id: number;
+  name: string;
+  description?: string | null;
+  difficultyLevel: string;
+  categoryId: number;
+};
+
+export type UpdateWorkoutPlanPayload = {
+  id: number;
+  userId: number;
+  name: string;
+  goal?: string | null;
+  createdAt: string;
+};
+
+export type UpdateWorkoutSessionPayload = {
+  id: number;
+  userId: number;
+  workoutPlanId: number;
+  sessionDate: string;
+  durationMinutes: number;
+  notes?: string | null;
+};
+
+export type UpdateProgressEntryPayload = {
+  id: number;
+  userId: number;
+  exerciseId: number;
+  weight: number;
+  reps: number;
+  createdAt: string;
+  comment?: string | null;
+};

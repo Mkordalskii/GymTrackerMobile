@@ -5,6 +5,7 @@ type ResourceCardProps = {
   title: string;
   description: string;
   meta?: string;
+  onEdit?: () => void;
   onDelete?: () => void;
 };
 
@@ -12,6 +13,7 @@ export function ResourceCard({
   title,
   description,
   meta,
+  onEdit,
   onDelete,
 }: ResourceCardProps) {
   return (
@@ -21,11 +23,18 @@ export function ResourceCard({
         <Text style={styles.description}>{description}</Text>
         {meta ? <Text style={styles.meta}>{meta}</Text> : null}
       </View>
-      {onDelete ? (
-        <Pressable onPress={onDelete} style={styles.deleteButton}>
-          <Text style={styles.deleteText}>Usun</Text>
-        </Pressable>
-      ) : null}
+      <View style={styles.actions}>
+        {onEdit ? (
+          <Pressable onPress={onEdit} style={styles.editButton}>
+            <Text style={styles.editText}>Edytuj</Text>
+          </Pressable>
+        ) : null}
+        {onDelete ? (
+          <Pressable onPress={onDelete} style={styles.deleteButton}>
+            <Text style={styles.deleteText}>Usun</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -59,8 +68,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontWeight: '700',
   },
-  deleteButton: {
+  actions: {
     alignSelf: 'flex-start',
+    gap: 8,
+  },
+  editButton: {
+    backgroundColor: '#D7EEDF',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editText: {
+    color: '#1A6E58',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  deleteButton: {
     backgroundColor: '#F8D8D2',
     borderRadius: 999,
     paddingHorizontal: 12,

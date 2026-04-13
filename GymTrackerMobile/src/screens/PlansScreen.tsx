@@ -21,6 +21,7 @@ export function PlansScreen({session}: PlansScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<WorkoutPlanDto | null>(null);
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,19 +52,46 @@ export function PlansScreen({session}: PlansScreenProps) {
     return plans.filter(item => item.userId === session.userId);
   }, [plans, session.userId]);
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setName('');
+    setGoal('');
+    setEditingPlan(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (plan: WorkoutPlanDto) => {
+    setEditingPlan(plan);
+    setName(plan.name);
+    setGoal(plan.goal || '');
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
 
     try {
-      await gymApi.createWorkoutPlan(session.token, {
-        userId: session.userId,
-        name,
-        goal: goal || null,
-        createdAt: new Date().toISOString(),
-      });
+      if (editingPlan) {
+        await gymApi.updateWorkoutPlan(session.token, editingPlan.id, {
+          id: editingPlan.id,
+          userId: editingPlan.userId,
+          name,
+          goal: goal || null,
+          createdAt: editingPlan.createdAt,
+        });
+      } else {
+        await gymApi.createWorkoutPlan(session.token, {
+          userId: session.userId,
+          name,
+          goal: goal || null,
+          createdAt: new Date().toISOString(),
+        });
+      }
       setIsModalVisible(false);
-      setName('');
-      setGoal('');
+      resetForm();
       await loadData();
     } catch (submitError) {
       setError(
@@ -99,7 +127,7 @@ export function PlansScreen({session}: PlansScreenProps) {
 
       <View style={styles.headerRow}>
         <SectionTitle title="Twoje plany" />
-        <PrimaryButton title="+ Dodaj" onPress={() => setIsModalVisible(true)} />
+        <PrimaryButton title="+ Dodaj" onPress={openCreateModal} />
       </View>
 
       {ownPlans.length === 0 ? (
@@ -114,6 +142,7 @@ export function PlansScreen({session}: PlansScreenProps) {
             title={item.name}
             description={item.goal || 'Bez dodatkowego celu'}
             meta={`Utworzono ${formatDate(item.createdAt)}`}
+            onEdit={() => openEditModal(item)}
             onDelete={() => handleDelete(item.id)}
           />
         ))
@@ -121,8 +150,11 @@ export function PlansScreen({session}: PlansScreenProps) {
 
       <ModalCard
         visible={isModalVisible}
-        title="Nowy plan"
-        onClose={() => setIsModalVisible(false)}>
+        title={editingPlan ? 'Edytuj plan' : 'Nowy plan'}
+        onClose={() => {
+          setIsModalVisible(false);
+          resetForm();
+        }}>
         <ScrollView>
           <FormField
             label="Nazwa planu"
@@ -138,8 +170,14 @@ export function PlansScreen({session}: PlansScreenProps) {
             multiline
           />
           <PrimaryButton
-            title={isSubmitting ? 'Zapisywanie...' : 'Zapisz plan'}
-            onPress={handleCreate}
+            title={
+              isSubmitting
+                ? 'Zapisywanie...'
+                : editingPlan
+                  ? 'Zapisz zmiany'
+                  : 'Zapisz plan'
+            }
+            onPress={handleSubmit}
             disabled={isSubmitting}
           />
         </ScrollView>

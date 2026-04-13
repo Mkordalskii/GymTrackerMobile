@@ -21,6 +21,10 @@ import {
   CreateExerciseCategoryPayload,
   CreateWorkoutPlanExercisePayload,
   UpdateUserPayload,
+  UpdateExercisePayload,
+  UpdateWorkoutPlanPayload,
+  UpdateWorkoutSessionPayload,
+  UpdateProgressEntryPayload,
 } from '../types/api';
 
 export const gymApi = {
@@ -44,8 +48,8 @@ export const gymApi = {
       token,
       body: payload,
     }),
-  updateExercise: (token: string, id: number, payload: CreateExercisePayload) =>
-    apiRequest<ExerciseDto>(`/api/Exercises/${id}`, { method: 'PUT', token, body: payload }),
+  updateExercise: (token: string, id: number, payload: UpdateExercisePayload) =>
+    apiRequest<void>(`/api/Exercises/${id}`, { method: 'PUT', token, body: payload }),
   deleteExercise: (token: string, id: number) =>
     apiRequest<void>(`/api/Exercises/${id}`, {method: 'DELETE', token}),
 
@@ -84,8 +88,8 @@ export const gymApi = {
       token,
       body: payload,
     }),
-  updateProgressEntry: (token: string, id: number, payload: CreateProgressEntryPayload) =>
-    apiRequest<ProgressEntryDto>(`/api/ProgressEntries/${id}`, { method: 'PUT', token, body: payload }),
+  updateProgressEntry: (token: string, id: number, payload: UpdateProgressEntryPayload) =>
+    apiRequest<void>(`/api/ProgressEntries/${id}`, { method: 'PUT', token, body: payload }),
   deleteProgressEntry: (token: string, id: number) =>
     apiRequest<void>(`/api/ProgressEntries/${id}`, {method: 'DELETE', token}),
 
@@ -124,8 +128,8 @@ export const gymApi = {
       token,
       body: payload,
     }),
-  updateWorkoutPlan: (token: string, id: number, payload: CreateWorkoutPlanPayload) =>
-    apiRequest<WorkoutPlanDto>(`/api/WorkoutPlans/${id}`, { method: 'PUT', token, body: payload }),
+  updateWorkoutPlan: (token: string, id: number, payload: UpdateWorkoutPlanPayload) =>
+    apiRequest<void>(`/api/WorkoutPlans/${id}`, { method: 'PUT', token, body: payload }),
   deleteWorkoutPlan: (token: string, id: number) =>
     apiRequest<void>(`/api/WorkoutPlans/${id}`, {method: 'DELETE', token}),
 
@@ -140,8 +144,8 @@ export const gymApi = {
       token,
       body: payload,
     }),
-  updateWorkoutSession: (token: string, id: number, payload: CreateWorkoutSessionPayload) =>
-    apiRequest<WorkoutSessionDto>(`/api/WorkoutSessions/${id}`, { method: 'PUT', token, body: payload }),
+  updateWorkoutSession: (token: string, id: number, payload: UpdateWorkoutSessionPayload) =>
+    apiRequest<void>(`/api/WorkoutSessions/${id}`, { method: 'PUT', token, body: payload }),
   deleteWorkoutSession: (token: string, id: number) =>
     apiRequest<void>(`/api/WorkoutSessions/${id}`, {method: 'DELETE', token}),
 

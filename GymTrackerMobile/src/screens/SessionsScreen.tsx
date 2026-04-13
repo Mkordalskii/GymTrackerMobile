@@ -23,6 +23,7 @@ export function SessionsScreen({session}: SessionsScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingSession, setEditingSession] = useState<WorkoutSessionDto | null>(null);
   const [workoutPlanId, setWorkoutPlanId] = useState('');
   const [durationMinutes, setDurationMinutes] = useState('45');
   const [notes, setNotes] = useState('');
@@ -77,7 +78,27 @@ export function SessionsScreen({session}: SessionsScreenProps) {
     [ownPlans],
   );
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setDurationMinutes('45');
+    setNotes('');
+    setWorkoutPlanId(planOptions[0] ? planOptions[0].value : '');
+    setEditingSession(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (item: WorkoutSessionDto) => {
+    setEditingSession(item);
+    setWorkoutPlanId(String(item.workoutPlanId));
+    setDurationMinutes(String(item.durationMinutes));
+    setNotes(item.notes || '');
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
     if (!workoutPlanId) {
       setError('Wybierz plan treningowy.');
       return;
@@ -86,16 +107,26 @@ export function SessionsScreen({session}: SessionsScreenProps) {
     setIsSubmitting(true);
 
     try {
-      await gymApi.createWorkoutSession(session.token, {
-        userId: session.userId,
-        workoutPlanId: Number(workoutPlanId),
-        sessionDate: new Date().toISOString(),
-        durationMinutes: Number(durationMinutes),
-        notes: notes || null,
-      });
+      if (editingSession) {
+        await gymApi.updateWorkoutSession(session.token, editingSession.id, {
+          id: editingSession.id,
+          userId: editingSession.userId,
+          workoutPlanId: Number(workoutPlanId),
+          sessionDate: editingSession.sessionDate,
+          durationMinutes: Number(durationMinutes),
+          notes: notes || null,
+        });
+      } else {
+        await gymApi.createWorkoutSession(session.token, {
+          userId: session.userId,
+          workoutPlanId: Number(workoutPlanId),
+          sessionDate: new Date().toISOString(),
+          durationMinutes: Number(durationMinutes),
+          notes: notes || null,
+        });
+      }
       setIsModalVisible(false);
-      setDurationMinutes('45');
-      setNotes('');
+      resetForm();
       await loadData();
     } catch (submitError) {
       setError(
@@ -131,7 +162,7 @@ export function SessionsScreen({session}: SessionsScreenProps) {
 
       <View style={styles.headerRow}>
         <SectionTitle title="Historia sesji" />
-        <PrimaryButton title="+ Dodaj" onPress={() => setIsModalVisible(true)} />
+        <PrimaryButton title="+ Dodaj" onPress={openCreateModal} />
       </View>
 
       {ownSessions.length === 0 ? (
@@ -149,6 +180,7 @@ export function SessionsScreen({session}: SessionsScreenProps) {
             }
             description={item.notes || 'Bez notatek'}
             meta={`${formatDateTime(item.sessionDate)} | ${item.durationMinutes} min`}
+            onEdit={() => openEditModal(item)}
             onDelete={() => handleDelete(item.id)}
           />
         ))
@@ -156,8 +188,11 @@ export function SessionsScreen({session}: SessionsScreenProps) {
 
       <ModalCard
         visible={isModalVisible}
-        title="Nowa sesja"
-        onClose={() => setIsModalVisible(false)}>
+        title={editingSession ? 'Edytuj sesje' : 'Nowa sesja'}
+        onClose={() => {
+          setIsModalVisible(false);
+          resetForm();
+        }}>
         <ScrollView>
           <SelectField
             label="Plan treningowy"
@@ -180,8 +215,14 @@ export function SessionsScreen({session}: SessionsScreenProps) {
             multiline
           />
           <PrimaryButton
-            title={isSubmitting ? 'Zapisywanie...' : 'Zapisz sesje'}
-            onPress={handleCreate}
+            title={
+              isSubmitting
+                ? 'Zapisywanie...'
+                : editingSession
+                  ? 'Zapisz zmiany'
+                  : 'Zapisz sesje'
+            }
+            onPress={handleSubmit}
             disabled={isSubmitting || !workoutPlanId}
           />
         </ScrollView>

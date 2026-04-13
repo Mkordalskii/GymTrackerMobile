@@ -23,6 +23,7 @@ export function ProgressScreen({session}: ProgressScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<ProgressEntryDto | null>(null);
   const [exerciseId, setExerciseId] = useState('');
   const [weight, setWeight] = useState('60');
   const [reps, setReps] = useState('8');
@@ -72,7 +73,29 @@ export function ProgressScreen({session}: ProgressScreenProps) {
     [exercises],
   );
 
-  const handleCreate = async () => {
+  const resetForm = () => {
+    setWeight('60');
+    setReps('8');
+    setComment('');
+    setExerciseId(exerciseOptions[0] ? exerciseOptions[0].value : '');
+    setEditingEntry(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (entry: ProgressEntryDto) => {
+    setEditingEntry(entry);
+    setExerciseId(String(entry.exerciseId));
+    setWeight(String(entry.weight));
+    setReps(String(entry.reps));
+    setComment(entry.comment || '');
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
     if (!exerciseId) {
       setError('Wybierz cwiczenie.');
       return;
@@ -81,18 +104,28 @@ export function ProgressScreen({session}: ProgressScreenProps) {
     setIsSubmitting(true);
 
     try {
-      await gymApi.createProgressEntry(session.token, {
-        userId: session.userId,
-        exerciseId: Number(exerciseId),
-        weight: Number(weight),
-        reps: Number(reps),
-        createdAt: new Date().toISOString(),
-        comment: comment || null,
-      });
+      if (editingEntry) {
+        await gymApi.updateProgressEntry(session.token, editingEntry.id, {
+          id: editingEntry.id,
+          userId: editingEntry.userId,
+          exerciseId: Number(exerciseId),
+          weight: Number(weight),
+          reps: Number(reps),
+          createdAt: editingEntry.createdAt,
+          comment: comment || null,
+        });
+      } else {
+        await gymApi.createProgressEntry(session.token, {
+          userId: session.userId,
+          exerciseId: Number(exerciseId),
+          weight: Number(weight),
+          reps: Number(reps),
+          createdAt: new Date().toISOString(),
+          comment: comment || null,
+        });
+      }
       setIsModalVisible(false);
-      setWeight('60');
-      setReps('8');
-      setComment('');
+      resetForm();
       await loadData();
     } catch (submitError) {
       setError(
@@ -128,7 +161,7 @@ export function ProgressScreen({session}: ProgressScreenProps) {
 
       <View style={styles.headerRow}>
         <SectionTitle title="Historia progresu" />
-        <PrimaryButton title="+ Dodaj" onPress={() => setIsModalVisible(true)} />
+        <PrimaryButton title="+ Dodaj" onPress={openCreateModal} />
       </View>
 
       {ownEntries.length === 0 ? (
@@ -148,6 +181,7 @@ export function ProgressScreen({session}: ProgressScreenProps) {
             meta={`${item.weight} kg | ${item.reps} powt. | ${formatDateTime(
               item.createdAt,
             )}`}
+            onEdit={() => openEditModal(item)}
             onDelete={() => handleDelete(item.id)}
           />
         ))
@@ -155,8 +189,11 @@ export function ProgressScreen({session}: ProgressScreenProps) {
 
       <ModalCard
         visible={isModalVisible}
-        title="Nowy wpis progresu"
-        onClose={() => setIsModalVisible(false)}>
+        title={editingEntry ? 'Edytuj wpis progresu' : 'Nowy wpis progresu'}
+        onClose={() => {
+          setIsModalVisible(false);
+          resetForm();
+        }}>
         <ScrollView>
           <SelectField
             label="Cwiczenie"
@@ -185,8 +222,14 @@ export function ProgressScreen({session}: ProgressScreenProps) {
             multiline
           />
           <PrimaryButton
-            title={isSubmitting ? 'Zapisywanie...' : 'Zapisz progres'}
-            onPress={handleCreate}
+            title={
+              isSubmitting
+                ? 'Zapisywanie...'
+                : editingEntry
+                  ? 'Zapisz zmiany'
+                  : 'Zapisz progres'
+            }
+            onPress={handleSubmit}
             disabled={isSubmitting || !exerciseId}
           />
         </ScrollView>

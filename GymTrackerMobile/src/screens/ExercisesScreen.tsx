@@ -29,6 +29,7 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<ExerciseDto | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState('Medium');
@@ -89,9 +90,25 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
     setName('');
     setDescription('');
     setDifficultyLevel('Medium');
+    setCategoryId(categories[0] ? String(categories[0].id) : '');
+    setEditingExercise(null);
   };
 
-  const handleCreate = async () => {
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (item: ExerciseDto) => {
+    setEditingExercise(item);
+    setName(item.name);
+    setDescription(item.description || '');
+    setDifficultyLevel(item.difficultyLevel);
+    setCategoryId(String(item.categoryId));
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
     if (!categoryId) {
       setError('Wybierz kategorie cwiczenia.');
       return;
@@ -101,12 +118,22 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
     setError('');
 
     try {
-      await gymApi.createExercise(session.token, {
-        name,
-        description: description || null,
-        difficultyLevel,
-        categoryId: Number(categoryId),
-      });
+      if (editingExercise) {
+        await gymApi.updateExercise(session.token, editingExercise.id, {
+          id: editingExercise.id,
+          name,
+          description: description || null,
+          difficultyLevel,
+          categoryId: Number(categoryId),
+        });
+      } else {
+        await gymApi.createExercise(session.token, {
+          name,
+          description: description || null,
+          difficultyLevel,
+          categoryId: Number(categoryId),
+        });
+      }
 
       setIsModalVisible(false);
       resetForm();
@@ -150,7 +177,7 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
           <SectionTitle title="Lista cwiczen" />
           <PrimaryButton
             title="+ Dodaj"
-            onPress={() => setIsModalVisible(true)}
+            onPress={openCreateModal}
           />
         </View>
 
@@ -166,6 +193,7 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
               title={item.name}
               description={item.description || item.categoryName}
               meta={`${item.categoryName} | ${item.difficultyLevel}`}
+              onEdit={() => openEditModal(item)}
               onDelete={() => handleDelete(item.id)}
             />
           ))
@@ -174,8 +202,11 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
 
       <ModalCard
         visible={isModalVisible}
-        title="Nowe cwiczenie"
-        onClose={() => setIsModalVisible(false)}>
+        title={editingExercise ? 'Edytuj cwiczenie' : 'Nowe cwiczenie'}
+        onClose={() => {
+          setIsModalVisible(false);
+          resetForm();
+        }}>
         <ScrollView>
           <FormField
             label="Nazwa"
@@ -204,8 +235,14 @@ export function ExercisesScreen({session}: ExercisesScreenProps) {
             emptyMessage="Brak kategorii. Dodaj kategorie cwiczen w API."
           />
           <PrimaryButton
-            title={isSubmitting ? 'Zapisywanie...' : 'Zapisz cwiczenie'}
-            onPress={handleCreate}
+            title={
+              isSubmitting
+                ? 'Zapisywanie...'
+                : editingExercise
+                  ? 'Zapisz zmiany'
+                  : 'Zapisz cwiczenie'
+            }
+            onPress={handleSubmit}
             disabled={isSubmitting || !categoryId}
           />
         </ScrollView>
