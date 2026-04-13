@@ -1,5 +1,12 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, Text, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import {gymApi} from '../api/gym';
 import {EmptyState} from '../components/EmptyState';
@@ -8,6 +15,7 @@ import {MessageBanner} from '../components/MessageBanner';
 import {ModalCard} from '../components/ModalCard';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {ResourceCard} from '../components/ResourceCard';
+import {SearchInput} from '../components/SearchInput';
 import {SelectField} from '../components/SelectField';
 import {SectionTitle} from '../components/SectionTitle';
 import {
@@ -63,11 +71,27 @@ export function ProfileScreen({session, onLogout}: ProfileScreenProps) {
   const [membershipEndDate, setMembershipEndDate] = useState('');
   const [membershipStatus, setMembershipStatus] = useState('Active');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [usersSearch, setUsersSearch] = useState('');
+  const [categoriesSearch, setCategoriesSearch] = useState('');
+  const [membershipTypesSearch, setMembershipTypesSearch] = useState('');
+  const [userMembershipsSearch, setUserMembershipsSearch] = useState('');
+  const [expandedSections, setExpandedSections] = useState({
+    users: false,
+    categories: false,
+    membershipTypes: false,
+    userMemberships: false,
+  });
 
   const isAdmin = useMemo(
     () => (user?.roleName ?? session.role).toLowerCase() === 'admin',
     [session.role, user?.roleName],
   );
+
+  const toggleSection = (
+    section: 'users' | 'categories' | 'membershipTypes' | 'userMemberships',
+  ) => {
+    setExpandedSections(prev => ({...prev, [section]: !prev[section]}));
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -138,6 +162,61 @@ export function ProfileScreen({session, onLogout}: ProfileScreenProps) {
     () => membershipTypes.map(item => ({value: String(item.id), label: item.name})),
     [membershipTypes],
   );
+
+  const filteredUsers = useMemo(() => {
+    const phrase = usersSearch.trim().toLowerCase();
+    if (!phrase) {
+      return users;
+    }
+    return users.filter(
+      item =>
+        item.name.toLowerCase().includes(phrase) ||
+        item.email.toLowerCase().includes(phrase) ||
+        item.roleName.toLowerCase().includes(phrase),
+    );
+  }, [users, usersSearch]);
+
+  const filteredCategories = useMemo(() => {
+    const phrase = categoriesSearch.trim().toLowerCase();
+    if (!phrase) {
+      return categories;
+    }
+    return categories.filter(
+      item =>
+        item.name.toLowerCase().includes(phrase) ||
+        (item.description || '').toLowerCase().includes(phrase),
+    );
+  }, [categories, categoriesSearch]);
+
+  const filteredMembershipTypes = useMemo(() => {
+    const phrase = membershipTypesSearch.trim().toLowerCase();
+    if (!phrase) {
+      return membershipTypes;
+    }
+    return membershipTypes.filter(
+      item =>
+        item.name.toLowerCase().includes(phrase) ||
+        (item.description || '').toLowerCase().includes(phrase),
+    );
+  }, [membershipTypes, membershipTypesSearch]);
+
+  const filteredUserMemberships = useMemo(() => {
+    const phrase = userMembershipsSearch.trim().toLowerCase();
+    if (!phrase) {
+      return memberships;
+    }
+    return memberships.filter(item => {
+      const userName = userNameById(item.userId).toLowerCase();
+      const membershipTypeName = getMembershipTypeName(item.membershipTypeId).toLowerCase();
+      return (
+        userName.includes(phrase) ||
+        membershipTypeName.includes(phrase) ||
+        item.status.toLowerCase().includes(phrase) ||
+        item.startDate.toLowerCase().includes(phrase) ||
+        item.endDate.toLowerCase().includes(phrase)
+      );
+    });
+  }, [memberships, userMembershipsSearch, userNameById, getMembershipTypeName]);
 
   const resetUserForm = () => {
     setEditingUser(null);
@@ -376,138 +455,202 @@ export function ProfileScreen({session, onLogout}: ProfileScreenProps) {
       {isAdmin ? (
         <>
           <View style={styles.section}>
-            <SectionTitle title="Zarzadzanie uzytkownikami" />
-            {users.length === 0 ? (
-              <EmptyState
-                title="Brak uzytkownikow"
-                description="Brak rekordow do wyswietlenia."
-              />
-            ) : (
-              users.map(item => (
-                <ResourceCard
-                  key={item.id}
-                  title={item.name}
-                  description={item.email}
-                  meta={`Rola: ${item.roleName}`}
-                  onEdit={() => {
-                    setEditingUser(item);
-                    setUserName(item.name);
-                    setUserEmail(item.email);
-                    setUserRoleId(String(item.roleId));
-                    setIsUserModalVisible(true);
-                  }}
-                  onDelete={() => handleDeleteUser(item.id)}
-                />
-              ))
-            )}
+            <Pressable
+              onPress={() => toggleSection('users')}
+              style={styles.expandHeader}>
+              <Text style={styles.expandTitle}>Zarzadzanie uzytkownikami</Text>
+              <Text style={styles.expandToggle}>
+                {expandedSections.users ? 'Zwin' : 'Rozwin'} ({users.length})
+              </Text>
+            </Pressable>
+            {expandedSections.users ? (
+              <>
+                <SearchInput value={usersSearch} onChangeText={setUsersSearch} />
+                <View style={styles.listSpacing} />
+                {filteredUsers.length === 0 ? (
+                  <EmptyState
+                    title="Brak uzytkownikow"
+                    description="Brak rekordow pasujacych do wyszukiwania."
+                  />
+                ) : (
+                  filteredUsers.map(item => (
+                    <ResourceCard
+                      key={item.id}
+                      title={item.name}
+                      description={item.email}
+                      meta={`Rola: ${item.roleName}`}
+                      onEdit={() => {
+                        setEditingUser(item);
+                        setUserName(item.name);
+                        setUserEmail(item.email);
+                        setUserRoleId(String(item.roleId));
+                        setIsUserModalVisible(true);
+                      }}
+                      onDelete={() => handleDeleteUser(item.id)}
+                    />
+                  ))
+                )}
+              </>
+            ) : null}
           </View>
 
           <View style={styles.section}>
-            <View style={styles.headerRow}>
-              <SectionTitle title="Kategorie cwiczen" />
-              <PrimaryButton
-                title="+ Dodaj"
-                onPress={() => {
-                  resetCategoryForm();
-                  setIsCategoryModalVisible(true);
-                }}
-              />
-            </View>
-            {categories.length === 0 ? (
-              <EmptyState
-                title="Brak kategorii"
-                description="Dodaj pierwsza kategorie cwiczen."
-              />
-            ) : (
-              categories.map(item => (
-                <ResourceCard
-                  key={item.id}
-                  title={item.name}
-                  description={item.description || 'Brak opisu'}
-                  onEdit={() => {
-                    setEditingCategory(item);
-                    setCategoryName(item.name);
-                    setCategoryDescription(item.description || '');
-                    setIsCategoryModalVisible(true);
-                  }}
-                  onDelete={() => handleDeleteCategory(item.id)}
+            <Pressable
+              onPress={() => toggleSection('categories')}
+              style={styles.expandHeader}>
+              <Text style={styles.expandTitle}>Kategorie cwiczen</Text>
+              <Text style={styles.expandToggle}>
+                {expandedSections.categories ? 'Zwin' : 'Rozwin'} (
+                {categories.length})
+              </Text>
+            </Pressable>
+            {expandedSections.categories ? (
+              <>
+                <View style={styles.headerRow}>
+                  <PrimaryButton
+                    title="+ Dodaj"
+                    onPress={() => {
+                      resetCategoryForm();
+                      setIsCategoryModalVisible(true);
+                    }}
+                  />
+                </View>
+                <SearchInput
+                  value={categoriesSearch}
+                  onChangeText={setCategoriesSearch}
                 />
-              ))
-            )}
+                <View style={styles.listSpacing} />
+                {filteredCategories.length === 0 ? (
+                  <EmptyState
+                    title="Brak kategorii"
+                    description="Brak kategorii pasujacych do wyszukiwania."
+                  />
+                ) : (
+                  filteredCategories.map(item => (
+                    <ResourceCard
+                      key={item.id}
+                      title={item.name}
+                      description={item.description || 'Brak opisu'}
+                      onEdit={() => {
+                        setEditingCategory(item);
+                        setCategoryName(item.name);
+                        setCategoryDescription(item.description || '');
+                        setIsCategoryModalVisible(true);
+                      }}
+                      onDelete={() => handleDeleteCategory(item.id)}
+                    />
+                  ))
+                )}
+              </>
+            ) : null}
           </View>
 
           <View style={styles.section}>
-            <View style={styles.headerRow}>
-              <SectionTitle title="Typy czlonkostwa" />
-              <PrimaryButton
-                title="+ Dodaj"
-                onPress={() => {
-                  resetMembershipTypeForm();
-                  setIsMembershipTypeModalVisible(true);
-                }}
-              />
-            </View>
-            {membershipTypes.length === 0 ? (
-              <EmptyState
-                title="Brak typow czlonkostwa"
-                description="Dodaj pierwszy typ czlonkostwa."
-              />
-            ) : (
-              membershipTypes.map(item => (
-                <ResourceCard
-                  key={item.id}
-                  title={item.name}
-                  description={item.description || 'Brak opisu'}
-                  onEdit={() => {
-                    setEditingMembershipType(item);
-                    setMembershipTypeName(item.name);
-                    setMembershipTypeDescription(item.description || '');
-                    setIsMembershipTypeModalVisible(true);
-                  }}
-                  onDelete={() => handleDeleteMembershipType(item.id)}
+            <Pressable
+              onPress={() => toggleSection('membershipTypes')}
+              style={styles.expandHeader}>
+              <Text style={styles.expandTitle}>Typy czlonkostwa</Text>
+              <Text style={styles.expandToggle}>
+                {expandedSections.membershipTypes ? 'Zwin' : 'Rozwin'} (
+                {membershipTypes.length})
+              </Text>
+            </Pressable>
+            {expandedSections.membershipTypes ? (
+              <>
+                <View style={styles.headerRow}>
+                  <PrimaryButton
+                    title="+ Dodaj"
+                    onPress={() => {
+                      resetMembershipTypeForm();
+                      setIsMembershipTypeModalVisible(true);
+                    }}
+                  />
+                </View>
+                <SearchInput
+                  value={membershipTypesSearch}
+                  onChangeText={setMembershipTypesSearch}
                 />
-              ))
-            )}
+                <View style={styles.listSpacing} />
+                {filteredMembershipTypes.length === 0 ? (
+                  <EmptyState
+                    title="Brak typow czlonkostwa"
+                    description="Brak typow pasujacych do wyszukiwania."
+                  />
+                ) : (
+                  filteredMembershipTypes.map(item => (
+                    <ResourceCard
+                      key={item.id}
+                      title={item.name}
+                      description={item.description || 'Brak opisu'}
+                      onEdit={() => {
+                        setEditingMembershipType(item);
+                        setMembershipTypeName(item.name);
+                        setMembershipTypeDescription(item.description || '');
+                        setIsMembershipTypeModalVisible(true);
+                      }}
+                      onDelete={() => handleDeleteMembershipType(item.id)}
+                    />
+                  ))
+                )}
+              </>
+            ) : null}
           </View>
 
           <View style={styles.section}>
-            <View style={styles.headerRow}>
-              <SectionTitle title="Czlonkostwa uzytkownikow" />
-              <PrimaryButton
-                title="+ Dodaj"
-                onPress={() => {
-                  resetUserMembershipForm();
-                  setIsUserMembershipModalVisible(true);
-                }}
-              />
-            </View>
-            {memberships.length === 0 ? (
-              <EmptyState
-                title="Brak czlonkostw"
-                description="Dodaj pierwsze czlonkostwo."
-              />
-            ) : (
-              memberships.map(item => (
-                <ResourceCard
-                  key={item.id}
-                  title={`${userNameById(item.userId)} -> ${getMembershipTypeName(
-                    item.membershipTypeId,
-                  )}`}
-                  description={`Status: ${item.status}`}
-                  meta={`${formatDate(item.startDate)} - ${formatDate(item.endDate)}`}
-                  onEdit={() => {
-                    setEditingUserMembership(item);
-                    setMembershipUserId(String(item.userId));
-                    setMembershipTypeId(String(item.membershipTypeId));
-                    setMembershipStartDate(item.startDate.slice(0, 10));
-                    setMembershipEndDate(item.endDate.slice(0, 10));
-                    setMembershipStatus(item.status);
-                    setIsUserMembershipModalVisible(true);
-                  }}
-                  onDelete={() => handleDeleteUserMembership(item.id)}
+            <Pressable
+              onPress={() => toggleSection('userMemberships')}
+              style={styles.expandHeader}>
+              <Text style={styles.expandTitle}>Czlonkostwa uzytkownikow</Text>
+              <Text style={styles.expandToggle}>
+                {expandedSections.userMemberships ? 'Zwin' : 'Rozwin'} (
+                {memberships.length})
+              </Text>
+            </Pressable>
+            {expandedSections.userMemberships ? (
+              <>
+                <View style={styles.headerRow}>
+                  <PrimaryButton
+                    title="+ Dodaj"
+                    onPress={() => {
+                      resetUserMembershipForm();
+                      setIsUserMembershipModalVisible(true);
+                    }}
+                  />
+                </View>
+                <SearchInput
+                  value={userMembershipsSearch}
+                  onChangeText={setUserMembershipsSearch}
                 />
-              ))
-            )}
+                <View style={styles.listSpacing} />
+                {filteredUserMemberships.length === 0 ? (
+                  <EmptyState
+                    title="Brak czlonkostw"
+                    description="Brak czlonkostw pasujacych do wyszukiwania."
+                  />
+                ) : (
+                  filteredUserMemberships.map(item => (
+                    <ResourceCard
+                      key={item.id}
+                      title={`${userNameById(item.userId)} -> ${getMembershipTypeName(
+                        item.membershipTypeId,
+                      )}`}
+                      description={`Status: ${item.status}`}
+                      meta={`${formatDate(item.startDate)} - ${formatDate(item.endDate)}`}
+                      onEdit={() => {
+                        setEditingUserMembership(item);
+                        setMembershipUserId(String(item.userId));
+                        setMembershipTypeId(String(item.membershipTypeId));
+                        setMembershipStartDate(item.startDate.slice(0, 10));
+                        setMembershipEndDate(item.endDate.slice(0, 10));
+                        setMembershipStatus(item.status);
+                        setIsUserMembershipModalVisible(true);
+                      }}
+                      onDelete={() => handleDeleteUserMembership(item.id)}
+                    />
+                  ))
+                )}
+              </>
+            ) : null}
           </View>
         </>
       ) : null}
@@ -685,15 +828,34 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
     marginBottom: 8,
+  },
+  expandHeader: {
+    backgroundColor: '#FFF7E8',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  expandTitle: {
+    color: '#1F241F',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  expandToggle: {
+    color: '#1F8A70',
+    fontSize: 13,
+    fontWeight: '700',
   },
   inlineHint: {
     color: '#6D6A63',
     fontSize: 12,
     marginBottom: 12,
+  },
+  listSpacing: {
+    marginBottom: 8,
   },
 });
