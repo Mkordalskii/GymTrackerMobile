@@ -25,6 +25,9 @@ import {
   UpdateWorkoutPlanPayload,
   UpdateWorkoutSessionPayload,
   UpdateProgressEntryPayload,
+  UpdateExerciseCategoryPayload,
+  UpdateMembershipTypePayload,
+  UpdateUserMembershipPayload,
 } from '../types/api';
 
 export const gymApi = {
@@ -33,7 +36,7 @@ export const gymApi = {
   getUserById: (token: string, id: number) =>
     apiRequest<UserDto>(`/api/Users/${id}`, {token}),
   updateUser: (token: string, id: number, payload: UpdateUserPayload) =>
-    apiRequest<UserDto>(`/api/Users/${id}`, { method: 'PUT', token, body: payload }),
+    apiRequest<void>(`/api/Users/${id}`, { method: 'PUT', token, body: payload }),
   deleteUser: (token: string, id: number) =>
     apiRequest<void>(`/api/Users/${id}`, { method: 'DELETE', token }),
 
@@ -60,8 +63,8 @@ export const gymApi = {
     apiRequest<ExerciseCategoryDto>(`/api/ExerciseCategories/${id}`, {token}),
   createExerciseCategory: (token: string, payload: CreateExerciseCategoryPayload) =>
     apiRequest<ExerciseCategoryDto>('/api/ExerciseCategories', { method: 'POST', token, body: payload }),
-  updateExerciseCategory: (token: string, id: number, payload: CreateExerciseCategoryPayload) =>
-    apiRequest<ExerciseCategoryDto>(`/api/ExerciseCategories/${id}`, { method: 'PUT', token, body: payload }),
+  updateExerciseCategory: (token: string, id: number, payload: UpdateExerciseCategoryPayload) =>
+    apiRequest<void>(`/api/ExerciseCategories/${id}`, { method: 'PUT', token, body: payload }),
   deleteExerciseCategory: (token: string, id: number) =>
     apiRequest<void>(`/api/ExerciseCategories/${id}`, { method: 'DELETE', token }),
 
@@ -72,8 +75,8 @@ export const gymApi = {
     apiRequest<MembershipTypeDto>(`/api/MembershipTypes/${id}`, {token}),
   createMembershipType: (token: string, payload: CreateMembershipTypePayload) =>
     apiRequest<MembershipTypeDto>('/api/MembershipTypes', { method: 'POST', token, body: payload }),
-  updateMembershipType: (token: string, id: number, payload: CreateMembershipTypePayload) =>
-    apiRequest<MembershipTypeDto>(`/api/MembershipTypes/${id}`, { method: 'PUT', token, body: payload }),
+  updateMembershipType: (token: string, id: number, payload: UpdateMembershipTypePayload) =>
+    apiRequest<void>(`/api/MembershipTypes/${id}`, { method: 'PUT', token, body: payload }),
   deleteMembershipType: (token: string, id: number) =>
     apiRequest<void>(`/api/MembershipTypes/${id}`, { method: 'DELETE', token }),
 
@@ -112,8 +115,8 @@ export const gymApi = {
     apiRequest<UserMembershipDto>(`/api/UserMemberships/${id}`, {token}),
   createUserMembership: (token: string, payload: CreateUserMembershipPayload) =>
     apiRequest<UserMembershipDto>('/api/UserMemberships', { method: 'POST', token, body: payload }),
-  updateUserMembership: (token: string, id: number, payload: CreateUserMembershipPayload) =>
-    apiRequest<UserMembershipDto>(`/api/UserMemberships/${id}`, { method: 'PUT', token, body: payload }),
+  updateUserMembership: (token: string, id: number, payload: UpdateUserMembershipPayload) =>
+    apiRequest<void>(`/api/UserMemberships/${id}`, { method: 'PUT', token, body: payload }),
   deleteUserMembership: (token: string, id: number) =>
     apiRequest<void>(`/api/UserMemberships/${id}`, { method: 'DELETE', token }),
 

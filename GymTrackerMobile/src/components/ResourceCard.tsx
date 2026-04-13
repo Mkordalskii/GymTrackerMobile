@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Modal, Pressable, StyleSheet, Text, View} from 'react-native';
 
 type ResourceCardProps = {
   title: string;
@@ -16,26 +16,70 @@ export function ResourceCard({
   onEdit,
   onDelete,
 }: ResourceCardProps) {
+  const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
+
+  const handleDeletePress = () => {
+    setIsConfirmVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setIsConfirmVisible(false);
+    onDelete?.();
+  };
+
   return (
-    <View style={styles.card}>
-      <View style={styles.main}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-        {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+    <>
+      <View style={styles.card}>
+        <View style={styles.main}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+          {meta ? <Text style={styles.meta}>{meta}</Text> : null}
+        </View>
+        <View style={styles.actions}>
+          {onEdit ? (
+            <Pressable onPress={onEdit} style={styles.editButton}>
+              <Text style={styles.editText}>Edytuj</Text>
+            </Pressable>
+          ) : null}
+          {onDelete ? (
+            <Pressable onPress={handleDeletePress} style={styles.deleteButton}>
+              <Text style={styles.deleteText}>Usun</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
-      <View style={styles.actions}>
-        {onEdit ? (
-          <Pressable onPress={onEdit} style={styles.editButton}>
-            <Text style={styles.editText}>Edytuj</Text>
-          </Pressable>
-        ) : null}
-        {onDelete ? (
-          <Pressable onPress={onDelete} style={styles.deleteButton}>
-            <Text style={styles.deleteText}>Usun</Text>
-          </Pressable>
-        ) : null}
-      </View>
-    </View>
+
+      <Modal
+        visible={isConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsConfirmVisible(false)}>
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Potwierdz usuniecie</Text>
+            <Text style={styles.confirmText}>
+              Czy na pewno chcesz usunac ten element?
+            </Text>
+            <View style={styles.confirmActions}>
+              <Pressable
+                onPress={() => setIsConfirmVisible(false)}
+                style={[styles.confirmButton, styles.cancelButton]}>
+                <Text style={[styles.confirmButtonText, styles.cancelButtonText]}>
+                  Anuluj
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmDelete}
+                style={[styles.confirmButton, styles.confirmDeleteButton]}>
+                <Text style={[styles.confirmButtonText, styles.confirmDeleteText]}>
+                  Usun
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -93,5 +137,54 @@ const styles = StyleSheet.create({
     color: '#B0462B',
     fontSize: 12,
     fontWeight: '800',
+  },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(31, 36, 31, 0.35)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  confirmCard: {
+    backgroundColor: '#F4F1EA',
+    borderRadius: 24,
+    padding: 20,
+  },
+  confirmTitle: {
+    color: '#1F241F',
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  confirmText: {
+    color: '#6D6A63',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  confirmActions: {
+    marginTop: 18,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  confirmButton: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  cancelButton: {
+    backgroundColor: '#E7E1D5',
+  },
+  confirmDeleteButton: {
+    backgroundColor: '#F8D8D2',
+  },
+  confirmButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  cancelButtonText: {
+    color: '#494741',
+  },
+  confirmDeleteText: {
+    color: '#B0462B',
   },
 });

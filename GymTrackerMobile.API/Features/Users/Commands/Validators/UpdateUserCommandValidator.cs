@@ -18,9 +18,6 @@ namespace GymTrackerMobile.API.Features.Users.Commands.Validators
                 .EmailAddress().WithMessage("Email format is invalid.")
                 .MaximumLength(200).WithMessage("Email can have max 200 characters.");
 
-            RuleFor(x => x.PasswordHash)
-                .NotEmpty().WithMessage("PasswordHash is required.");
-
             RuleFor(x => x.RoleId)
                 .GreaterThan(0).WithMessage("RoleId must be greater than 0.");
         }

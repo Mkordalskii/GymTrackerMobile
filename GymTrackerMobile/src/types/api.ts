@@ -125,6 +125,12 @@ export type CreateMembershipTypePayload = {
   description?: string | null;
 };
 
+export type UpdateMembershipTypePayload = {
+  id: number;
+  name: string;
+  description?: string | null;
+};
+
 export type CreateUserMembershipPayload = {
   userId: number;
   membershipTypeId: number;
@@ -133,7 +139,22 @@ export type CreateUserMembershipPayload = {
   status: string;
 };
 
+export type UpdateUserMembershipPayload = {
+  id: number;
+  userId: number;
+  membershipTypeId: number;
+  startDate: string;
+  endDate: string;
+  status: string;
+};
+
 export type CreateExerciseCategoryPayload = {
+  name: string;
+  description?: string | null;
+};
+
+export type UpdateExerciseCategoryPayload = {
+  id: number;
   name: string;
   description?: string | null;
 };
@@ -147,6 +168,7 @@ export type CreateWorkoutPlanExercisePayload = {
 };
 
 export type UpdateUserPayload = {
+  id: number;
   name: string;
   email: string;
   roleId: number;
