@@ -1,56 +1,11 @@
-//Plik z przykładowymi danymi do testowania i rozwoju aplikacji
-export type TabKey = 'home' | 'plans' | 'exercises' | 'progress' | 'profile';
-export type ExerciseFilter =
-  | 'Wszystkie'
-  | 'Klatka'
-  | 'Plecy'
-  | 'Nogi'
-  | 'Cardio';
+// plik zawiera dane testowe, które są używane podczas tworzenia i testowania komponentów UI, zanim zostanie podłączona prawdziwa logika do backendu. Dzięki temu możemy pracować nad interfejsem użytkownika niezależnie od stanu implementacji API.
+import type {TabKey} from '../types/api';
 
-export type ExerciseItem = {
-  id: string;
-  name: string;
-  category: Exclude<ExerciseFilter, 'Wszystkie'>;
-  difficulty: 'Latwy' | 'Sredni' | 'Trudny';
+export const tabTitles: Record<TabKey, string> = {
+  home: 'Dashboard',
+  plans: 'Plany',
+  exercises: 'Cwiczenia',
+  sessions: 'Sesje',
+  progress: 'Postepy',
+  profile: 'Profil',
 };
-
-export const filters: ExerciseFilter[] = [
-  'Wszystkie',
-  'Klatka',
-  'Plecy',
-  'Nogi',
-  'Cardio',
-];
-
-export const exercises: ExerciseItem[] = [
-  {
-    id: '1',
-    name: 'Wyciskanie sztangi',
-    category: 'Klatka',
-    difficulty: 'Sredni',
-  },
-  {
-    id: '2',
-    name: 'Martwy ciag',
-    category: 'Plecy',
-    difficulty: 'Trudny',
-  },
-  {
-    id: '3',
-    name: 'Przysiady',
-    category: 'Nogi',
-    difficulty: 'Sredni',
-  },
-  {
-    id: '4',
-    name: 'Burpees',
-    category: 'Cardio',
-    difficulty: 'Trudny',
-  },
-  {
-    id: '5',
-    name: 'Rozpietki hantlami',
-    category: 'Klatka',
-    difficulty: 'Latwy',
-  },
-];

@@ -1,4 +1,4 @@
-﻿using GymTrackerMobile.API.Services.Auth.Commands;
+using GymTrackerMobile.API.Services.Auth.Commands;
 using GymTrackerMobile.API.Services.Auth.Dtos;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -19,14 +19,14 @@ namespace GymTrackerMobile.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<AuthResponseDto>> Register(RegisterCommand command)
+        public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<AuthResponseDto>> Login(LoginCommand command)
+        public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginCommand command)
         {
             var result = await _mediator.Send(command);
             return Ok(result);

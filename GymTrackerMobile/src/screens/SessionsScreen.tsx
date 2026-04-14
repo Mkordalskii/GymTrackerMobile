@@ -1,0 +1,242 @@
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {ActivityIndicator, ScrollView, StyleSheet, View} from 'react-native';
+
+import {gymApi} from '../api/gym';
+import {EmptyState} from '../components/EmptyState';
+import {FormField} from '../components/FormField';
+import {MessageBanner} from '../components/MessageBanner';
+import {ModalCard} from '../components/ModalCard';
+import {PrimaryButton} from '../components/PrimaryButton';
+import {ResourceCard} from '../components/ResourceCard';
+import {SelectField} from '../components/SelectField';
+import {SectionTitle} from '../components/SectionTitle';
+import {AuthSession, WorkoutPlanDto, WorkoutSessionDto} from '../types/api';
+import {formatDateTime} from '../utils/format';
+
+type SessionsScreenProps = {
+  session: AuthSession;
+};
+
+export function SessionsScreen({session}: SessionsScreenProps) {
+  const [sessions, setSessions] = useState<WorkoutSessionDto[]>([]);
+  const [plans, setPlans] = useState<WorkoutPlanDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingSession, setEditingSession] = useState<WorkoutSessionDto | null>(null);
+  const [workoutPlanId, setWorkoutPlanId] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState('45');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const [sessionItems, planItems] = await Promise.all([
+        gymApi.getWorkoutSessions(session.token),
+        gymApi.getWorkoutPlans(session.token),
+      ]);
+      setSessions(sessionItems);
+      setPlans(planItems);
+      const firstOwnPlan = planItems.find(item => item.userId === session.userId);
+      if (firstOwnPlan) {
+        setWorkoutPlanId(String(firstOwnPlan.id));
+      }
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : 'Nie udalo sie pobrac sesji.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [session.token, session.userId]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  const ownSessions = useMemo(() => {
+    return sessions
+      .filter(item => item.userId === session.userId)
+      .sort(
+        (a, b) =>
+          new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime(),
+      );
+  }, [session.userId, sessions]);
+
+  const ownPlans = useMemo(
+    () => plans.filter(item => item.userId === session.userId),
+    [plans, session.userId],
+  );
+
+  const planOptions = useMemo(
+    () => ownPlans.map(item => ({value: String(item.id), label: item.name})),
+    [ownPlans],
+  );
+
+  const resetForm = () => {
+    setDurationMinutes('45');
+    setNotes('');
+    setWorkoutPlanId(planOptions[0] ? planOptions[0].value : '');
+    setEditingSession(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
+    setIsModalVisible(true);
+  };
+
+  const openEditModal = (item: WorkoutSessionDto) => {
+    setEditingSession(item);
+    setWorkoutPlanId(String(item.workoutPlanId));
+    setDurationMinutes(String(item.durationMinutes));
+    setNotes(item.notes || '');
+    setIsModalVisible(true);
+  };
+
+  const handleSubmit = async () => {
+    if (!workoutPlanId) {
+      setError('Wybierz plan treningowy.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      if (editingSession) {
+        await gymApi.updateWorkoutSession(session.token, editingSession.id, {
+          id: editingSession.id,
+          userId: editingSession.userId,
+          workoutPlanId: Number(workoutPlanId),
+          sessionDate: editingSession.sessionDate,
+          durationMinutes: Number(durationMinutes),
+          notes: notes || null,
+        });
+      } else {
+        await gymApi.createWorkoutSession(session.token, {
+          userId: session.userId,
+          workoutPlanId: Number(workoutPlanId),
+          sessionDate: new Date().toISOString(),
+          durationMinutes: Number(durationMinutes),
+          notes: notes || null,
+        });
+      }
+      setIsModalVisible(false);
+      resetForm();
+      await loadData();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'Nie udalo sie zapisac sesji.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await gymApi.deleteWorkoutSession(session.token, id);
+      await loadData();
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Nie udalo sie usunac sesji.',
+      );
+    }
+  };
+
+  if (loading) {
+    return <ActivityIndicator size="large" color="#1F8A70" />;
+  }
+
+  return (
+    <View>
+      {error ? <MessageBanner tone="error" text={error} /> : null}
+
+      <View style={styles.headerRow}>
+        <SectionTitle title="Historia sesji" />
+        <PrimaryButton title="+ Dodaj" onPress={openCreateModal} />
+      </View>
+
+      {ownSessions.length === 0 ? (
+        <EmptyState
+          title="Brak sesji"
+          description="Dodaj pierwsza zakonczona sesje treningowa."
+        />
+      ) : (
+        ownSessions.map(item => (
+          <ResourceCard
+            key={item.id}
+            title={
+              plans.find(plan => plan.id === item.workoutPlanId)?.name ||
+              `Plan #${item.workoutPlanId}`
+            }
+            description={item.notes || 'Bez notatek'}
+            meta={`${formatDateTime(item.sessionDate)} | ${item.durationMinutes} min`}
+            onEdit={() => openEditModal(item)}
+            onDelete={() => handleDelete(item.id)}
+          />
+        ))
+      )}
+
+      <ModalCard
+        visible={isModalVisible}
+        title={editingSession ? 'Edytuj sesje' : 'Nowa sesja'}
+        onClose={() => {
+          setIsModalVisible(false);
+          resetForm();
+        }}>
+        <ScrollView>
+          <SelectField
+            label="Plan treningowy"
+            value={workoutPlanId}
+            onChange={setWorkoutPlanId}
+            options={planOptions}
+            emptyMessage="Brak planow. Najpierw dodaj plan treningowy."
+          />
+          <FormField
+            label="Czas trwania (min)"
+            value={durationMinutes}
+            onChangeText={setDurationMinutes}
+            keyboardType="numeric"
+          />
+          <FormField
+            label="Notatki"
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Jak poszedl trening"
+            multiline
+          />
+          <PrimaryButton
+            title={
+              isSubmitting
+                ? 'Zapisywanie...'
+                : editingSession
+                  ? 'Zapisz zmiany'
+                  : 'Zapisz sesje'
+            }
+            onPress={handleSubmit}
+            disabled={isSubmitting || !workoutPlanId}
+          />
+        </ScrollView>
+      </ModalCard>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+});

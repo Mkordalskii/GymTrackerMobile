@@ -58,6 +58,16 @@ namespace GymTrackerMobile.API
                 options.SuppressModelStateInvalidFilter = true;
             });
 
+            // CORS - dla development zezwalaj na wszystkie połączenia
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll",
+                    policy => policy
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader());
+            });
+
             // JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSettings["Key"]
@@ -83,6 +93,42 @@ namespace GymTrackerMobile.API
 
             var app = builder.Build();
 
+            // In development keep predictable credentials for seeded users.
+            if (app.Environment.IsDevelopment())
+            {
+                using var scope = app.Services.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<GymTrackerDbContext>();
+                var passwordHashService = scope.ServiceProvider.GetRequiredService<IPasswordHashService>();
+
+                var seededCredentials = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["admin@gym.com"] = "Admin123!",
+                    ["user@gym.com"] = "User123!"
+                };
+
+                var seededUsers = dbContext.Users
+                    .Where(u => seededCredentials.Keys.Contains(u.Email))
+                    .ToList();
+
+                var changed = false;
+                foreach (var user in seededUsers)
+                {
+                    var plainPassword = seededCredentials[user.Email];
+                    var passwordValid = passwordHashService.VerifyPassword(user, user.PasswordHash, plainPassword);
+
+                    if (!passwordValid)
+                    {
+                        user.PasswordHash = passwordHashService.HashPassword(user, plainPassword);
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    dbContext.SaveChanges();
+                }
+            }
+
             // Global exception handling
             app.UseGlobalExceptionHandler();
 
@@ -101,6 +147,7 @@ namespace GymTrackerMobile.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseCors("AllowAll");
 
             app.MapControllers();
 

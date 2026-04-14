@@ -1,4 +1,4 @@
-﻿using GymTrackerMobile.API.Entities;
+using GymTrackerMobile.API.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace GymTrackerMobile.API.Services.Auth
@@ -13,9 +13,17 @@ namespace GymTrackerMobile.API.Services.Auth
 
         public bool VerifyPassword(User user, string password, string providedPassword)
         {
-            var result = _passwordHasher.VerifyHashedPassword(user, password, providedPassword);
-            return result == PasswordVerificationResult.Success
-                || result == PasswordVerificationResult.SuccessRehashNeeded;
+            try
+            {
+                var result = _passwordHasher.VerifyHashedPassword(user, password, providedPassword);
+                return result == PasswordVerificationResult.Success
+                    || result == PasswordVerificationResult.SuccessRehashNeeded;
+            }
+            catch (FormatException)
+            {
+                // Legacy/plain placeholder hashes (e.g. seeded test data) are not Identity hashes.
+                return false;
+            }
         }
     }
 }

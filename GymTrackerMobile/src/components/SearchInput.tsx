@@ -11,7 +11,7 @@ export function SearchInput({value, onChangeText}: SearchInputProps) {
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Szukaj cwiczenia"
+        placeholder="Szukaj"
         placeholderTextColor="#7A7A85"
         style={styles.input}
         value={value}
