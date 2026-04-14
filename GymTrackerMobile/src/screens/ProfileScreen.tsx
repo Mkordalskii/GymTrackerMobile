@@ -1,15 +1,15 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
+  ActivityIndicator, //spinner ladowania
+  Pressable, //komponent do rozwijanych sekcji
+  ScrollView, // przewijanie zawartosci
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import {gymApi} from '../api/gym';
-import {EmptyState} from '../components/EmptyState';
+import {EmptyState} from '../components/EmptyState'; //pokazuje komunikat gdy nie ma zadnych danych do wyswietlenia, np. brak uzytkownikow, kategorii, typow czlonkostwa czy czlonkostw uzytkownikow
 import {FormField} from '../components/FormField';
 import {MessageBanner} from '../components/MessageBanner';
 import {ModalCard} from '../components/ModalCard';
@@ -80,13 +80,14 @@ export function ProfileScreen({session, onLogout}: ProfileScreenProps) {
     categories: false,
     membershipTypes: false,
     userMemberships: false,
-  });
+  }); // na starcie wszystkie sekcje sa zwiniete
 
   const isAdmin = useMemo(
     () => (user?.roleName ?? session.role).toLowerCase() === 'admin',
     [session.role, user?.roleName],
   );
 
+  // funkcja do przełączania rozwijanych sekcji, przyjmuje nazwę sekcji jako argument i aktualizuje stan expandedSections, zmieniając wartość dla danej sekcji na przeciwną (true/false), co powoduje rozwinięcie lub zwinięcie tej sekcji w interfejsie użytkownika
   const toggleSection = (
     section: 'users' | 'categories' | 'membershipTypes' | 'userMemberships',
   ) => {
@@ -100,7 +101,7 @@ export function ProfileScreen({session, onLogout}: ProfileScreenProps) {
     try {
       const userItem = await gymApi.getUserById(session.token, session.userId);
       const admin = userItem.roleName.toLowerCase() === 'admin';
-      const requests: Promise<unknown>[] = [gymApi.getUserMemberships(session.token)];
+      const requests: Promise<unknown>[] = [gymApi.getUserMemberships(session.token)]; //tablica requestow, ktore musimy wykonac, zeby zaladowac dane do profilu. Na poczatku dodajemy request do pobrania czlonkostw uzytkownika, bo te dane sa potrzebne niezaleznie od roli uzytkownika. Jesli uzytkownik jest adminem, to dodajemy dodatkowe requesty do pobrania listy uzytkownikow, kategorii, typow czlonkostwa i ról, bo te dane sa potrzebne tylko dla admina
       if (admin) {
         requests.push(
           gymApi.getMembershipTypes(session.token),
