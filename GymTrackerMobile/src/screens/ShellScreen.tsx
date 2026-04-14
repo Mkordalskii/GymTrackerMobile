@@ -1,3 +1,4 @@
+// nawigacja i zarzadzanie ekranami w aplikacji. ShellScreen jest glownym ekranem, ktory zawiera nawigacje i wszystkie inne ekrany, dlatego jest to centralny punkt naszej aplikacji, do ktorego przechodzimy po udanym logowaniu/rejestracji. W zaleznosci od tego, jaki tab jest aktywny, wyswietlamy odpowiedni ekran (HomeScreen, PlansScreen, ExercisesScreen, SessionsScreen, ProgressScreen lub ProfileScreen). ShellScreen przyjmuje session i onLogout jako propsy, zeby moc przekazywac je do poszczegolnych ekranow i zarzadzac stanem zalogowania w aplikacji.
 import React, {useMemo, useState} from 'react';
 
 import {MainLayout} from '../layouts/MainLayout';

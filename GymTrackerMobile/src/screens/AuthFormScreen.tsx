@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
+  KeyboardAvoidingView, // przesuwa zawartosc ekranu w gore gdy klawiatura jest otwarta, zeby pola formularza nie byly zasloniete przez klawiature, co poprawia uzytecznosc ekranu logowania i rejestracji
+  Platform, //sprawdza na jakim systemie operacyjnym jest uruchomiona aplikacja, zeby dostosowac zachowanie KeyboardAvoidingView tylko dla iOS, bo na Androidzie nie jest to potrzebne
   ScrollView,
   StyleSheet,
   Text,
@@ -31,7 +31,7 @@ export function AuthFormScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // ten stan pozwala nam zablokowac przycisk logowania/rejestracji podczas trwania operacji, zeby zapobiec wielokrotnemu wysylaniu formularza i pokazac uzytkownikowi, ze cos sie dzieje po kliknieciu przycisku
 
   const handleSubmit = async () => {
     setError('');
@@ -50,7 +50,7 @@ export function AuthFormScreen({
           : 'Nie udalo sie wykonac operacji.',
       );
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // odblokowujemy przycisk po zakonczeniu operacji, niezaleznie od tego, czy sie powiodla, czy nie, zeby uzytkownik mogl sprobowac ponownie w przypadku bledu
     }
   };
 
@@ -58,16 +58,15 @@ export function AuthFormScreen({
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.safeArea}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}> // dla iOS ustawiamy behavior na 'padding', co sprawia, ze zawartosc ekranu jest przesuwana w gore o wysokosc klawiatury, a dla Androida nie ustawiamy zadnego behavior, bo na Androidzie system automatycznie przesuwa zawartosc, gdy klawiatura jest otwarta, wiec nie jest to potrzebne
+        <ScrollView contentContainerStyle={styles.content}> // przewijanie zawartosci ekranu, zeby uzytkownik mogl przewinac do pol formularza, jesli ekran jest za maly, zeby pomiescic wszystko bez przewijania
           <View style={styles.hero}>
             <Text style={styles.eyebrow}>GymFlow Mobile</Text>
             <Text style={styles.title}>
               {mode === 'login' ? 'Zaloguj sie' : 'Utworz konto'}
             </Text>
             <Text style={styles.subtitle}>
-              Frontend jest juz podpiety pod API i korzysta z JWT oraz
-              prawdziwych endpointow.
+              Zaloguj sie i korzystaj z aplikacji
             </Text>
           </View>
 
@@ -88,7 +87,7 @@ export function AuthFormScreen({
               value={email}
               onChangeText={setEmail}
               placeholder="user@gym.com"
-              keyboardType="email-address"
+              keyboardType="email-address" // pokazuje klawiature dostosowana do wpisywania adresu email, zeby uzytkownik mial latwiejszy dostep do znaku @ i kropki, co poprawia uzytecznosc formularza logowania i rejestracji
             />
 
             <FormField
@@ -96,7 +95,7 @@ export function AuthFormScreen({
               value={password}
               onChangeText={setPassword}
               placeholder="Wpisz haslo"
-              secureTextEntry
+              secureTextEntry // ukrywa wpisywane haslo
             />
 
             <PrimaryButton
@@ -117,7 +116,7 @@ export function AuthFormScreen({
               </Text>
               <Text
                 onPress={() =>
-                  onChangeMode(mode === 'login' ? 'register' : 'login')
+                  onChangeMode(mode === 'login' ? 'register' : 'login') // przełączanie między trybem logowania a rejestracji po kliknięciu w link, zeby uzytkownik mogl latwo zmienic tryb, jesli pomylil sie lub chce sie zarejestrowac zamiast logowac
                 }
                 style={styles.switchLink}>
                 {mode === 'login' ? 'Zarejestruj sie' : 'Wroc do logowania'}
@@ -132,7 +131,7 @@ export function AuthFormScreen({
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
+    flex: 1, // 1 zajmuje caly ekran
     backgroundColor: '#F4F1EA',
   },
   content: {
